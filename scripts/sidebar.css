@@ -1,0 +1,46 @@
+.sidebar-nav li > ul {
+  display: none;
+}
+
+.sidebar-nav li.has-children:not(.is-collapsed) > ul {
+  display: block;
+}
+
+.sidebar-nav li.has-children {
+  position: relative;
+  box-sizing: border-box;
+  padding-left: 16px;
+}
+
+.sidebar-nav .sidebar-tree-toggle {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 16px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #7f8c8d;
+  cursor: pointer;
+  font: inherit;
+  line-height: 20px;
+}
+
+.sidebar-nav .sidebar-tree-toggle::before {
+  content: "▾";
+  display: block;
+}
+
+.sidebar-nav li.is-collapsed > .sidebar-tree-toggle::before {
+  content: "▸";
+}
+
+.sidebar-nav .sidebar-tree-toggle:hover {
+  color: var(--theme-color, #42b983);
+}
+
+.sidebar-nav .sidebar-tree-toggle:focus-visible {
+  outline: 1px solid var(--theme-color, #42b983);
+  outline-offset: 1px;
+}

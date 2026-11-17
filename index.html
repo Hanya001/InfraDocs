@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>InfraDocs</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <link rel="stylesheet" href="scripts/sidebar.css">
 </head>
 <body>
   <div id="app">正在加载文档...</div>
@@ -13,11 +14,12 @@
       name: 'InfraDocs',
       repo: 'https://github.com/Hanya001/InfraDocs',
       homepage: 'readme.md',
-      loadSidebar: true,
+      loadSidebar: 'scripts/_sidebar.md',
       subMaxLevel: 0,
       auto2top: true
     };
   </script>
+  <script src="scripts/collapse-sidebar.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
 </body>
 </html>

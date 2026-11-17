@@ -1,7 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "_sidebar.md"
+OUTPUT = ROOT / "scripts" / "_sidebar.md"
 SKIPPED_FILES = {"_sidebar.md", "_navbar.md", "_coverpage.md", "404.md"}
 
 
