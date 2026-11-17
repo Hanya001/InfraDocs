@@ -1,0 +1,28 @@
+- [首页](README.md)
+
+- TorchNPU_Inductor
+  - bugfix
+    - [DeepSeek-V4-Flash-FP8：TP4 下稀疏注意力算子 Head 数限制](<TorchNPU_Inductor/bugfix/DeepSeek-V4-FP8-TP4稀疏注意力Head数限制.md>)
+    - [vllm-ascend Inductor 适配 Bug 定位与修复追踪](<TorchNPU_Inductor/bugfix/Inductor适配Bug定位与修复追踪.md>)
+    - [Qwen3-0.6B：原生 `npu_rms_norm` 与 Inductor Triton RMSNorm 数值差异定位](<TorchNPU_Inductor/bugfix/Qwen3-0.6B-RMSNorm数值差异定位.md>)
+    - [Qwen3.5-35B-A3B-W8A8-MTP：融合量化算子参数错误导致 eager 与编译路径均无法启动](<TorchNPU_Inductor/bugfix/Qwen3.5-35B-W8A8-MTP融合量化算子参数错误.md>)
+    - [Qwen3.5：GDN 后置 LayerNorm 丢失与 `eps` 类型错误定位](<TorchNPU_Inductor/bugfix/Qwen3.5-GDN-LayerNorm编译问题定位.md>)
+  - feature
+    - [vllm-ascend Inductor 功能缺失、性能优化与覆盖缺口](<TorchNPU_Inductor/feature/Inductor适配功能性能与覆盖缺口.md>)
+  - Info
+    - 版本信息
+      - [AllenCGuan已有修改](<TorchNPU_Inductor/Info/版本信息/1116_triton-ascend升级3.6.0post2版本.md>)
+      - [pytorch版本问题](<TorchNPU_Inductor/Info/版本信息/pytorch版本问题.md>)
+    - [一、Ascend/pytorch 的 triton_experimental 开发现状](<TorchNPU_Inductor/Info/Ascend PyTorch Triton Inductor 开发与功能支持调研.md>)
+    - [基础信息](<TorchNPU_Inductor/Info/模块信息.md>)
+  - knowledge
+    - [inductor是什么？为什么要引入inductor？](<TorchNPU_Inductor/knowledge/inductor知识.md>)
+    - [npu被跑满定位](<TorchNPU_Inductor/knowledge/npu被跑满定位.md>)
+    - [图模式是不是就是aclgraph？](<TorchNPU_Inductor/knowledge/图模式知识.md>)
+    - [FFN 的计算](<TorchNPU_Inductor/knowledge/大模型基础.md>)
+  - tests
+    - [vllm-ascend Inductor 适配测试工作台账](<TorchNPU_Inductor/tests/Inductor适配测试工作总结.md>)
+    - [vLLM Ascend Inductor 接入测试覆盖模型与量化矩阵](<TorchNPU_Inductor/tests/Inductor适配测试覆盖模型与量化矩阵.md>)
+- VLLM
+  - knowledge
+    - [切分对象](<VLLM/knowledge/并行策略知识.md>)
