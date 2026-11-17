@@ -1,0 +1,429 @@
+# Qwen3.5：GDN 后置 LayerNorm 丢失与 `eps` 类型错误定位
+
+## 1. 当前状态与结论边界
+
+**当前结论：本地临时方案已通过 A5 端到端验证，但尚未合入任何分支，不能标记为“已修复”。**
+
+本次实际是两个连续问题：
+
+1. triton_experimental 将 GDN 后置的用户 Triton LayerNorm 高阶节点错误地送入通用 fallback，导致 kernel launch 被清理，后续 GEMM 读取未初始化内存。
+2. 恢复该节点后，Inductor 又将 `eps` 从 Python float 推导为 FP64，触发 Triton-Ascend 对 FP64 `sqrt` 的明确限制；简单在设备端强转 FP32，又会引入 `__truncdfsf2` 链接错误。
+
+本地最终采用：
+
+- 保留 `triton_kernel_wrapper_mutation` 的上游专用 lowering；
+- 在 TE 的 `NPUWrapperCodeGen` 中，仅在生成 user-defined Triton kernel 签名时关闭 Inductor 的 FP64 Python float 策略，使 `eps` 与 eager Triton-JIT 一样使用 FP32。
+
+该方案没有修改 PyTorch 官方 `wrapper.py` 或 `triton_utils.py`，没有使用 custom-op，也没有把 #190340 的产品 patch 留在最终运行环境中。`vllm-ascend` 的 LayerNorm 已恢复原版，`eps` 仍是普通运行时参数，不再使用此前验证过的 `tl.constexpr` 临时方案。当前方案属于**本地验证通过、尚未合入的临时修复方案**，还需要形成正式分支、回归测试和合入评审。
+
+## 2. 环境与原始现象
+
+主要环境：
+
+- A5 / Ascend950DT；
+- CANN 9.2.0；
+- torch 2.13.0+cpu；
+- torch-npu 2.13.0+gitc798c65；
+- triton-ascend 3.6.0.post2；
+- vLLM 0.27.1、vllm-ascend 0.27.1rc0；
+- 模型 `/mnt/weight/Qwen3.5-2B`，BF16，单卡，温度 0。
+
+20261112 模测结果位于：
+
+- [原始跨路径 compare.json](../../../server-scripts/bench213/20261112_A5机器模测/20261112_6models_01/Qwen3.5-2B/compare.json)
+- [原始 Inductor 输出](../../../server-scripts/bench213/20261112_A5机器模测/20261112_6models_01/Qwen3.5-2B/inductor/acc_track.jsonl)
+
+原始现象：
+
+- 12 条提示词跨路径全部从第 0 个生成 token 不同；
+- 11 条 Inductor 输出为连续 128 个 `!`，另一条也很快退化为 `!`；
+- 默认路径输出连贯；
+- Inductor 因输出审查失败而跳过性能统计；
+- Qwen3.5-35B-A3B 出现同型损坏。
+
+这说明问题不是逐 token 数值漂移，而是前向计算在早期已经损坏。
+
+## 3. 第一层定位：LayerNorm 为什么没有执行
+
+### 3.1 正常调用关系
+
+GDN 输出后本应执行：
+
+```text
+core_attn_out
+  → self.norm(core_attn_out, z)
+  → out_proj / unquantized_gemm
+```
+
+`self.norm` 内部调用 `_layer_norm_fwd_1pass_kernel_npu`，这是一个用户自定义 Triton kernel。它通过 `tl.store` 原地写入输出 `Y` 和统计值 `Rstd`。
+
+### 3.2 Dynamo/AOT 形成 mutation HOP
+
+Dynamo 将这次调用包装为 `triton_kernel_wrapper_mutation`。之后 standard post-grad 处理又把 functional 形式还原成 mutation 形式，准备由上游专用 lowering 创建 `UserDefinedTritonKernel`。
+
+上游正确路径会：
+
+- 分析 Triton kernel 的 `tl.store`；
+- 找出被修改的参数；
+- 创建 `MutationOutput`；
+- 通过 `V.graph.register_operation` 保留节点；
+- 生成真实 kernel launch。
+
+### 3.3 TE 批量 fallback 覆盖了正确路径
+
+TE 在激活时执行批量注册：
+
+```python
+for op in lowerings:
+    if op in keep_set:
+        continue
+    if op not in decompositions and op not in gen_set:
+        make_fallback(op)
+```
+
+`triton_kernel_wrapper_mutation` 不在保护名单中，于是上游专用 lowering 被通用 `fallback_handler` 覆盖。
+
+通用 `FallbackKernel` 对 HOP 的处理中明确假设：
+
+```python
+# We assume here that HOPs with FallbackKernel are functional.
+```
+
+因此没有登记这个 kernel 的 mutation。与此同时，mutation HOP 本身返回 `None`。最终形成了一个非常危险的组合：
+
+```text
+没有普通返回值
+  + 没有登记副作用
+  = 被当成无输出、无副作用节点清理
+```
+
+### 3.4 最终代码中的直接证据
+
+原始 Inductor 生成代码中，FX 图还保留 LayerNorm 调用，但最终 `output_code.py` 已没有对应 launch：
+
+```python
+buf0 = empty_strided_npu((16*s18, 128), (128, 1), torch.bfloat16)
+
+buf4 = torch.ops.vllm.unquantized_gemm.default(
+    reinterpret_tensor(buf0, (s18, 2048), (2048, 1), 0),
+    arg6_1,
+)
+```
+
+`empty_strided_npu` 只分配内存，不会清零，更不会计算 LayerNorm。因此后续 GEMM 读取的是未初始化内容，异常数值继续传播到最终 logits，产生固定或近乎固定的错误 token。
+
+原始生成代码见：
+
+`server-scripts/bench213/20261112_A5机器模测/20261112_6models_01/Qwen3.5-2B/inductor/runtime/log/torch_compile_debug/run_2026_11_12_09_44_51_393532-pid_349158/torchinductor/model__1_inference_1.1/output_code.py:290`
+
+### 3.5 为什么没有直接报“未初始化内存”
+
+保留下来的代码在形式上完全合法：
+
+- buffer 的 shape 正确；
+- dtype 正确；
+- 地址有效；
+- GEMM 可以正常接收它。
+
+Inductor 没有额外检查“这个 buffer 的生产者节点是否已被删除”，所以表现为静默错误，而不是显式异常。
+
+### 3.6 排除旧候选
+
+历史候选包括 `fused_gdn_gating_kernel` 和 FLA-under-track。本次检查显示：
+
+- 两条路径都使用 FLA；
+- gating/FLA 的共有 `.npubin` 在 default 和 Inductor 中逐字节相同；
+- 默认路径正常，说明这些 kernel 本身不足以解释本次损坏；
+- gated LayerNorm 的 `.npubin` 只存在于默认路径，Inductor 中缺失。
+
+因此，本次主因不是 GDN 主体 kernel，而是其后置 LayerNorm 被编译器删除。W-02 的 GDN 融合算子数值缺陷是另一个独立问题。
+
+## 4. 第二层定位：恢复节点后，为什么变成 FP64 `sqrt` 错误
+
+### 4.1 `eps` 如何被推导为 FP64
+
+`eps` 的传递路径是：
+
+```text
+模型配置 rms_norm_eps
+  → AscendRMSNormGated.self.eps
+  → LayerNormFn.apply
+  → layer_norm_fwd_npu
+  → Triton kernel 的 eps 标量
+```
+
+上游 Inductor 在 `define_user_defined_triton_kernel` 中，把非 tensor 标量统一包装为 `SizeArg`，随后调用 `signature_of`：
+
+```python
+elif isinstance(arg.expr, (float, sympy.Float):
+    if config._use_fp64_for_unbacked_floats and device_supports_fp64(...):
+        return "fp64"
+    return "fp32"
+```
+
+当前环境中：
+
+- `_use_fp64_for_unbacked_floats=True`；
+- `device_supports_fp64` 对非 XPU 设备默认返回 True。
+
+所以最终生成：
+
+```python
+'eps': 'fp64'
+```
+
+### 4.2 eager 为什么是 FP32
+
+eager Triton-JIT 不复用上述规则，而是通过 `mangle_type` 进入 C++ 的 `handle_float_type`。该实现直接返回 `fp32`。在当前环境中实测：
+
+```python
+mangle_type(1e-6) == "fp32"
+```
+
+因此，真正的不一致是：
+
+```text
+eager Triton-JIT：eps = fp32
+Inductor wrapper：eps = fp64
+```
+
+### 4.3 FP64 `sqrt` 是明确屏蔽，不是泛化的“硬件不支持 FP64”
+
+Triton-Ascend 的通用 `math.py` 允许 `fp32/fp64`，但 `op_dtype_config.py` 对 A2/A5 明确写入：
+
+```python
+"sqrt": {
+    "unsupported": {
+        "a2": ["fp64"],
+        "a5": ["fp64"],
+    },
+    "supported": {
+        "a2": ["fp32"],
+        "a5": ["fp32"],
+    },
+}
+```
+
+`dtype_guard` 在生成 TTIR 前执行这条规则，所以首先出现：
+
+```text
+operator 'sqrt' does not support dtype 'float64'
+```
+
+这只能证明当前 Triton-Ascend 路径明确屏蔽 FP64 `sqrt`，不能外推为“A5 或 CANN 的所有 FP64 运算均不支持”。
+
+### 4.4 为什么简单强转也不够
+
+将代码改成：
+
+```python
+tl.cast(eps, tl.float32)
+```
+
+虽然绕过了 `sqrt` 类型检查，但会把 `arith.truncf` 引入设备代码。链接阶段随后报：
+
+```text
+undefined symbol: __truncdfsf2
+```
+
+这是设备运行库缺少 FP64→FP32 转换辅助函数的另一层问题，与 FP64 `sqrt` 黑名单不是同一个错误。
+
+## 5. 上游的解决方法
+
+### 5.1 HOP：保留专用 lowering
+
+上游正确做法不是删除 LayerNorm，也不是把它变成 custom-op，而是将 `triton_kernel_wrapper_mutation` 加入 `KEEP_UPSTREAM_LOWERING`，避免被批量 fallback 覆盖：
+
+```python
+KEEP_UPSTREAM_LOWERING = [
+    control_deps,
+    triton_kernel_wrapper_mutation,
+    ...
+]
+```
+
+[PR #49515](https://gitcode.com/Ascend/pytorch/pull/49515) 采用的就是这个方向，并补充了 user-defined kernel 的元数据安全读取和 AOTI 兼容工作。该 PR 当前仍处于评审过程中，不能直接视为已经合入的修复。
+
+### 5.2 Python float 签名：只改变 user-defined kernel 的策略
+
+上游 #170289 为避免普通 Inductor kernel 的 FP64 精度损失，引入了 FP64 标量策略；#180854 又加入设备能力判断。
+
+随后上游发现，普通 Inductor kernel 的精度策略不应强加给 user-defined Triton kernel，因为 eager Triton-JIT 对 Python float 使用 FP32。因此，#190340 给 `signature_of` 和 `signature_to_meta` 增加：
+
+```python
+use_fp64_for_python_float: bool = True
+```
+
+并只在 user-defined Triton kernel wrapper 中传：
+
+```python
+use_fp64_for_python_float=False
+```
+
+最终效果是：
+
+| 路径 | Python float 策略 |
+|---|---|
+| 普通 Inductor kernel | 保留 FP64 精度策略 |
+| user-defined Triton kernel | 与 eager 一致，使用 FP32 |
+
+提交信息：
+
+```text
+644154dd707f81ae7f07788dcfeb9e9f874e345e
+Match Triton Python float signatures for user-defined kernels (#190340)
+```
+
+链接：[pytorch/pytorch#190340](https://github.com/pytorch/pytorch/pull/190340)
+
+该提交在 v2.13.0 之后合入，未进入 v2.13.0 或 v2.14.0，已进入 v2.15.0。原始 patch 保存在 [190340-upstream.patch](../../../server-scripts/bench213/patches/190340-upstream.patch)，仅含两个产品文件的版本为 [190340-product.patch](../../../server-scripts/bench213/patches/190340-product.patch)。
+
+## 6. 本地临时方案的选择过程
+
+### 6.1 已排除的方案
+
+**Custom-op 边界**：可以避免 HOP 和 FP64 签名问题，但会把 LayerNorm 变成 opaque extern，形成融合屏障。原有 Triton 内部融合保留，Inductor 跨算子融合受限，不符合保留融合空间的目标。
+
+**全局关闭 FP64**：会影响所有 Python float 和合法的 FP64 计算，覆盖范围过大。
+
+**全局使用 `mangle_type` 覆盖未注解参数**：虽然与 eager 默认行为一致，但会改变所有用户 kernel 的标量类型，可能影响明确依赖 FP64 的 kernel，因此未采用。
+
+**直接删除 FP64 `sqrt` 黑名单**：没有证明底层完整支持，且 `__truncdfsf2` 已显示运行库存在缺口，不能作为正确修复。
+
+**仅添加 `eps: tl.float32`**：参数粒度最精确，但当前上游 Inductor wrapper 不消费 `annotation_type`，还需要 TE 增加注解读取逻辑。该组合在实验中可以工作，但仍需要额外的 TE 适配。
+
+### 6.2 最终采用 TE 作用域内的 FP32 签名策略
+
+最终只保留 TE 中的两项本地修改，`vllm-ascend` 的 LayerNorm 已恢复原版。
+
+HOP 保护：
+
+`inductor-meta-worktree/pytorch/torch_npu/_inductor/triton_experimental/lowering_override_list.py:131`
+
+```python
+KEEP_UPSTREAM_LOWERING = [
+    control_deps,
+    _tkw.triton_kernel_wrapper_mutation,
+] + [...]
+```
+
+Python float 签名策略：
+
+`inductor-meta-worktree/pytorch/torch_npu/_inductor/triton_experimental/codegen/wrapper.py:54`
+
+```python
+def define_user_defined_triton_kernel(self, *args, **kwargs):
+    # Match eager Triton-JIT, which passes Python floats as fp32. Scope the
+    # opt-out to user-defined kernels so Inductor-generated kernels retain
+    # upstream's fp64 precision policy and NPU avoids unsupported fp64 ops.
+    with config.patch("_use_fp64_for_unbacked_floats", False):
+        return super().define_user_defined_triton_kernel(*args, **kwargs)
+```
+
+`config.patch` 只在调用上游 `define_user_defined_triton_kernel` 期间生效。上游随后仍通过 `signature_to_meta` 和 `signature_of` 推导参数，但此时 Python float 会选择 FP32。退出上下文后，配置自动恢复，因此普通 Inductor/TE 生成 kernel 仍保留原来的 FP64 精度策略。
+
+这与 #190340 的实现方式不同，但对当前主图 Python wrapper 路径的核心效果一致：只让 user-defined Triton kernel 的 Python float 签名与 eager 一致，不全局修改类型推导。
+
+### 6.3 为什么用它替代 constexpr
+
+此前验证过将 `eps` 改为 `tl.constexpr` 的方案，它同样可以避开 FP64 运行时标量，但要求 `eps` 在推理期间不变，并会按不同取值生成独立 kernel。
+
+当前 TE 方案不再依赖这一约束：
+
+- `eps` 保持普通运行时参数，不要求调用方固定其值；
+- 不写死具体类型或数值，仍由上游签名函数完成推导；
+- 只改变 user-defined Triton kernel 的 Python float 策略，与 eager Triton-JIT 对齐；
+- 不修改 BF16、FP16、FP32 或量化 tensor 的 dtype；
+- 不需要复制整个上游 wrapper 函数，也不需要回移 #190340 的产品 patch。
+
+当前覆写由 TE 主图的 `NPUWrapperCodeGen` 生效。子图仍使用 `SubgraphPythonWrapperCodegen`，独立 AOTI/C++ wrapper 也属于其他代码生成路径，因此不能仅凭本次验证宣称这些路径均已覆盖。
+
+## 7. 验证结果
+
+### 7.1 最小 LayerNorm 对拍
+
+最终探针输出：
+
+```text
+eps is constexpr: False
+out max_abs_diff 0.0
+rstd max_abs_diff 0.0
+eps signature: fp32
+LAYERNORM_COMPILE_PASS
+```
+
+说明 `eps` 已恢复为普通运行时参数，编译路径与 eager 的输出及统计值一致，生成代码中没有残留的 FP64 `eps` 签名。
+
+### 7.2 Qwen3.5-2B 完整双路径复测
+
+结果目录：
+
+`/home/z00896543/scripts/bench213/a5/20261117_qwen35_2b_te_fp32/Qwen3.5-2B`
+
+本地比对文件：[compare.json](../../../server-scripts/bench213/20261117_qwen35_2b_te_fp32/Qwen3.5-2B/compare.json)
+
+| 检查项 | 结果 |
+|---|---|
+| 默认路径退出码 | 0 |
+| Inductor 退出码 | 0 |
+| 跨路径逐 token 一致 | 9/12 |
+| Inductor 自身两次生成 | 稳定一致 |
+| 默认路径自身两次生成 | 稳定一致 |
+| 全零 token 输出 | 0 条 |
+| 连续 `!` 损坏 | 未再出现 |
+| 三轮性能测试 | 全部完成 |
+
+因此，原始灾难性生成损坏在当前本地修改下已经消失，但不能据此宣称两条路径达到完整数值验收。
+
+### 7.3 生成代码证据
+
+最终签名为：
+
+```python
+'eps': 'fp32'
+```
+
+`eps` 仍作为运行时参数传入：
+
+```python
+_layer_norm_fwd_1pass_kernel_npu_0.run(..., 1e-06, ...)
+```
+
+最终执行顺序为：
+
+```python
+_layer_norm_fwd_1pass_kernel_npu_0.run(..., buf0, ...)
+buf5 = torch.ops.vllm.unquantized_gemm.default(reinterpret_tensor(buf0, ...), ...)
+```
+
+并生成 `_layer_norm_fwd_1pass_kernel_npu.npubin`。这同时证明：
+
+- HOP 不再被删除；
+- LayerNorm 在 GEMM 前执行；
+- 不再把未初始化 buffer 送入 GEMM；
+- 不再需要 FP64 `sqrt` 或 `__truncdfsf2`；
+- 不需要通过 constexpr 特化规避签名问题。
+
+### 7.4 短序列 warning 的判定
+
+复测日志中存在：
+
+```text
+chunk_gated_delta_rule: Input tensor shape suggests potential format mismatch:
+seq_len (13) < num_heads (16)
+```
+
+该提示来自 `vllm_ascend/ops/triton/fla/chunk.py` 的启发式检查：当 `head_first=False` 且 `q.shape[1] < q.shape[2]` 时发出 warning。当前输入遵循 `[B, T, H, ...]`，短 prompt 的 token 数小于 16 个 head 即可触发，并不代表实际维度传错。
+
+default 和 Inductor 日志各出现 9 次，两条路径均正常完成，因此它与本次 TE 签名修改无关，也不是原始连续 `!` 损坏的直接原因。
+
+## 8. 后续正式化建议
+
+1. **明确当前方案的边界**：合入时保留 TE 作用域内的 FP32 签名策略，不把主图 Python wrapper 的验证结果外推到子图或 AOTI/C++ wrapper。
+2. **补签名策略回归测试**：覆盖 Python float 字面量和运行时 unbacked float，并验证普通 Inductor kernel 的 FP64 精度策略不受影响。
+3. **补 LayerNorm 编译路径回归测试**：现有测试主要验证 eager，应增加 `torch.compile` 的 `out/rstd` 对拍、FP32 签名以及 kernel launch 顺序检查。
+4. **保留 Qwen3.5-2B 和 35B 双路径复测**：不能只检查能否启动，必须检查连续 `!`、首 token 和重复生成稳定性。
+5. **跟踪上游修复**：#49515 合入后评估是否替代本地 HOP 保护；迁移到已包含 #190340 的 PyTorch 基线后，评估是否还需要 TE 的配置覆写。
+6. **新基线验证**：NPU `master` 默认 torch 2.15 已包含 #190340，迁移时仍需保留 HOP 保护，并重新验证 CANN、triton-ascend、vllm-ascend 和量化模型。
+
+在正式分支和合入记录产生之前，本文只将当前方案记为：**本地验证通过的临时方案，尚未合入，不能标注为已修复。**
