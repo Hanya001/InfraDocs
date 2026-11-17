@@ -1,5 +1,8 @@
 (function () {
-  const expandedDirectories = new Set();
+  const expandedDirectories = new Set([
+    'TorchNPU_Inductor',
+    'VLLM'
+  ]);
 
   function directoryName(item) {
     return Array.from(item.childNodes)
