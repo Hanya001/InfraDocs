@@ -43,7 +43,7 @@ def sidebar_lines(directory, depth=0):
         elif (
             path.suffix.lower() == ".md"
             and path.name not in SKIPPED_FILES
-            and path != ROOT / "README.md"
+            and not (path.parent == ROOT and path.name.casefold() == "readme.md")
         ):
             relative_path = path.relative_to(ROOT).as_posix()
             lines.append(
@@ -54,7 +54,7 @@ def sidebar_lines(directory, depth=0):
 
 
 def main():
-    lines = ["- [首页](README.md)", "", *sidebar_lines(ROOT)]
+    lines = ["- [首页](readme.md)", "", *sidebar_lines(ROOT)]
     OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Generated {OUTPUT.relative_to(ROOT)}")
 
