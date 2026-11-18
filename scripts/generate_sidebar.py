@@ -5,14 +5,6 @@ OUTPUT = ROOT / "scripts" / "_sidebar.md"
 SKIPPED_FILES = {"_sidebar.md", "_navbar.md", "_coverpage.md", "404.md"}
 
 
-def page_title(path):
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
-        line = line.strip()
-        if line.startswith("# "):
-            return line[2:].strip()
-    return path.stem
-
-
 def contains_markdown(directory):
     return any(
         path.is_file()
@@ -47,7 +39,7 @@ def sidebar_lines(directory, depth=0):
         ):
             relative_path = path.relative_to(ROOT).as_posix()
             lines.append(
-                f"{'  ' * depth}- [{page_title(path)}](<{relative_path}>)"
+                f"{'  ' * depth}- [{path.stem}](<{relative_path}>)"
             )
 
     return lines
