@@ -43,7 +43,7 @@ IFS=',' read -r -a CARDS <<< "$DEVICES"
 [[ ${#CARDS[@]} -eq $TP ]] || { echo 'The number of devices must equal TP' >&2; exit 2; }
 
 SCRIPTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-source "$WORKSPACE/env.sh"
+source "$WORKSPACE/env.sh" || exit 2
 PYTHON=${PY:-python}
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 VLLM_WORKER_MULTIPROC_METHOD=spawn
 export VLLM_USE_V2_MODEL_RUNNER=${VLLM_USE_V2_MODEL_RUNNER:-1} PYTHONUNBUFFERED=1
