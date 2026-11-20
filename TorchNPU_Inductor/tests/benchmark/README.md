@@ -220,7 +220,7 @@ bash run_performance.sh \
 
 脚本固定运行两轮，顺序为 `default → Inductor → default → Inductor`。每条路径复用自己的编译缓存；启动前检查 NPU 进程和 HBM 占用，并通过卡锁防止同一批次重复分配。每轮完成后自动生成 6 份比较 JSON，两轮共 12 份，最后生成并打印 `<结果根目录>/performance/SUMMARY.md`。
 
-单卡模型使用 `--devices 0 --tp 1`；`--devices` 的数量必须等于 `--tp`。`--timeout` 控制每次服务进程的最长运行时间，默认 21600 秒。结果根目录必须不存在，避免覆盖历史数据。
+单卡模型使用 `--devices 0 --tp 1`；`--devices` 的数量必须等于 `--tp`。`--cache-root <目录>` 可复用该目录下的 `default/` 和 `inductor/` 暖缓存；不传时使用本次结果目录下的新缓存。`--timeout` 控制每次服务进程的最长运行时间，默认 21600 秒。结果根目录必须不存在，避免覆盖历史数据。
 
 ## 可选的完整矩阵编排
 

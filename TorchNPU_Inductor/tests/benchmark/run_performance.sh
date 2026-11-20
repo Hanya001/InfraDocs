@@ -8,6 +8,7 @@ Usage: bash run_performance.sh --model PATH --workspace PATH --results PATH --sh
 Options:
   --devices IDS   Comma-separated NPU IDs (default: 0)
   --tp N          Tensor parallel size; must match the number of devices (default: 1)
+  --cache-root PATH  Existing cache directory containing default/ and inductor/
   --timeout SEC   Timeout for each server process (default: 21600)
   -h, --help      Show this help
 EOF
@@ -19,6 +20,7 @@ ROOT=
 SHAREGPT=
 DEVICES=0
 TP=1
+CACHE_ROOT=
 TIMEOUT=21600
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -28,6 +30,7 @@ while [[ $# -gt 0 ]]; do
     --sharegpt) SHAREGPT=$2; shift 2 ;;
     --devices) DEVICES=$2; shift 2 ;;
     --tp) TP=$2; shift 2 ;;
+    --cache-root) CACHE_ROOT=$2; shift 2 ;;
     --timeout) TIMEOUT=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -48,6 +51,7 @@ PYTHON=${PY:-python}
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 VLLM_WORKER_MULTIPROC_METHOD=spawn
 export VLLM_USE_V2_MODEL_RUNNER=${VLLM_USE_V2_MODEL_RUNNER:-1} PYTHONUNBUFFERED=1
 mkdir -p "$ROOT/performance" "$ROOT/_locks"
+CACHE_ROOT=${CACHE_ROOT:-$ROOT/cache}
 LOCKS=$ROOT/_locks
 SERVER_PID=
 BASE_URL=
@@ -89,7 +93,7 @@ start_server() {
   BASE_URL=http://127.0.0.1:$port
   local prefix=$ROOT/performance/$track.repeat$round
   "$PYTHON" "$SCRIPTS/runtime.py" exec --workspace "$WORKSPACE" \
-    --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$ROOT/cache/$track" \
+    --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
     --out "$prefix.runtime.json" --timeout "$TIMEOUT" -- \
     "$PYTHON" "$SCRIPTS/server.py" run --model "$MODEL" --track "$track" \
     --port "$port" --tp "$TP" --no-enable-prefix-caching \
