@@ -10,6 +10,7 @@ Options:
   --tp N          Tensor parallel size; must match the number of devices (default: 1)
   --cache-root PATH  Existing cache directory containing default/ and inductor/
   --enable-prefix-caching  Enable prefix caching instead of disabling it
+  --repeats N     Number of default/Inductor rounds (default: 2)
   --timeout SEC   Timeout for each server process (default: 21600)
   -h, --help      Show this help
 EOF
@@ -23,6 +24,7 @@ DEVICES=0
 TP=1
 CACHE_ROOT=
 PREFIX_CACHING=--no-enable-prefix-caching
+REPEATS=2
 TIMEOUT=21600
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -34,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     --tp) TP=$2; shift 2 ;;
     --cache-root) CACHE_ROOT=$2; shift 2 ;;
     --enable-prefix-caching) PREFIX_CACHING=--enable-prefix-caching; shift ;;
+    --repeats) REPEATS=$2; shift 2 ;;
     --timeout) TIMEOUT=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -44,7 +47,7 @@ done
 [[ -f $MODEL/config.json ]] || { echo "Missing model config: $MODEL/config.json" >&2; exit 2; }
 [[ -f $WORKSPACE/env.sh ]] || { echo "Missing workspace environment: $WORKSPACE/env.sh" >&2; exit 2; }
 [[ -f $SHAREGPT ]] || { echo "Missing ShareGPT dataset: $SHAREGPT" >&2; exit 2; }
-[[ $TP =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP or timeout' >&2; exit 2; }
+[[ $TP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, repeats or timeout' >&2; exit 2; }
 IFS=',' read -r -a CARDS <<< "$DEVICES"
 [[ ${#CARDS[@]} -eq $TP ]] || { echo 'The number of devices must equal TP' >&2; exit 2; }
 
@@ -140,7 +143,7 @@ compare_loads() {
   done
 }
 
-for round in 1 2; do
+for ((round=1; round<=REPEATS; round++)); do
   for track in default inductor; do
     echo "PERFORMANCE_START model=$MODEL round=$round track=$track devices=$DEVICES"
     start_server "$track" "$round"
