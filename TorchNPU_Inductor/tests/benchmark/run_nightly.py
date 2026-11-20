@@ -215,14 +215,14 @@ for index in indexes:
         command = (f"cd {quote(SCRIPTS)} && BENCH_BASE={quote(BASE)} BENCH_WORKSPACE={quote(WORKSPACE)} "
                    f"MODEL_SET=20261118 BENCH_DEVICES={self.devices(model)} "
                    f"VLLM_USE_V2_MODEL_RUNNER=1 {extra} TRACKS={quote(tracks)} "
-                   f"bash run_a5.sh {quote(root)} {quote(model.name)}")
+                   f"bash run_model.sh {quote(root)} {quote(model.name)}")
         return self.remote(command, 5400, f"{model.name}.correctness.log", self.correctness_deadline)
 
     def run_accuracy(self, model, track):
         out = f"{self.remote_root}/accuracy/{model.name}/{track}"
         cache = f"{self.correctness_dir(model)}/{track}/runtime/log"
         command = self.environment_prefix(model, track, out, cache)
-        command += (f" && \"$PY\" -u {quote(SCRIPTS + '/run_standard_accuracy.py')} --model {quote(model.weights)}"
+        command += (f" && \"$PY\" -u {quote(SCRIPTS + '/run_task_accuracy.py')} --model {quote(model.weights)}"
                     f" --track {track} --out {quote(out)} --port 0 --tp {model.tp} --num-prompts 200")
         if model.enable_ep:
             command += " --enable-expert-parallel"
@@ -237,7 +237,7 @@ for index in indexes:
         else:
             cache = f"{self.remote_root}/cache/{model.name}/default"
         command = self.environment_prefix(model, track, out, cache)
-        command += (f" && \"$PY\" -u {quote(SCRIPTS + '/run_official_performance.py')} --model {quote(model.weights)}"
+        command += (f" && \"$PY\" -u {quote(SCRIPTS + '/run_serve_performance.py')} --model {quote(model.weights)}"
                     f" --track {track} --out {quote(out)} --port 0 --tp {model.tp} --repeats 3")
         if model.long_context:
             command += " --long-context"
@@ -387,7 +387,7 @@ for index in indexes:
             self.release_devices(model)
 
     def run(self):
-        for required in (f"{WORKSPACE}/env.sh", f"{SCRIPTS}/run_a5.sh"):
+        for required in (f"{WORKSPACE}/env.sh", f"{SCRIPTS}/run_model.sh"):
             result = self.host(f"docker exec {CONTAINER} test -f {required}")
             if result.returncode != 0:
                 raise RuntimeError(f"Remote preflight failed for {CONTAINER}:{required}: {result.stdout.strip()}")

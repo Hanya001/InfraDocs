@@ -9,7 +9,7 @@ import sys
 import time
 from pathlib import Path
 
-from run_standard_accuracy import stop_on_signal, stop_server, wait_ready
+from run_task_accuracy import stop_on_signal, stop_server, wait_ready
 
 
 def run_bench(vllm, args, common, name, log):

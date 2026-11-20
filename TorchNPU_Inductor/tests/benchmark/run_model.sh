@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 在现有 A5 容器内运行。参数为新的结果根目录，以及可选的单个模型名称。
 set -uo pipefail
-RUN_ROOT=${1:?Usage: bash run_a5.sh /absolute/new/result/root [model-name]}
+RUN_ROOT=${1:?Usage: bash run_model.sh /absolute/new/result/root [model-name]}
 SELECT=${2:-all}
 BASE=${BENCH_BASE:-/home/z00896543/validation/a51112_20261116_195508}
 WORKSPACE=${BENCH_WORKSPACE:-$BASE/pin/inductor-meta-worktree}
@@ -118,8 +118,8 @@ for spec in "${RUNS[@]}"; do
     esac
     export ASCEND_RT_VISIBLE_DEVICES="$devices"
     export BENCH_MODEL="$weights" BENCH_TP="$tp" BENCH_TRACK="$track" BENCH_OUT="$model_dir/$track"
-    script=${BENCH_SCRIPT:-bench_one.py}
-    if [[ $name = Qwen3-Embedding-0.6B && -z ${BENCH_SCRIPT:-} ]]; then script=embedding_one.py; fi
+    script=${BENCH_SCRIPT:-check_correctness.py}
+    if [[ $name = Qwen3-Embedding-0.6B && -z ${BENCH_SCRIPT:-} ]]; then script=check_embedding.py; fi
     export BENCH_ENABLE_EXPERT_PARALLEL="${enable_ep:-0}" BENCH_TOKENIZER_MODE="${tokenizer_mode:-}"
     export BENCH_VERIFY_REPEATS=${BENCH_VERIFY_REPEATS:-2}
     mkdir -p "$BENCH_OUT"
@@ -139,7 +139,7 @@ for spec in "${RUNS[@]}"; do
       git -C triton-ascend rev-parse HEAD
       "$PY" -I -c 'import importlib.metadata as m; print({p:m.version(p) for p in ["torch","torch-npu","triton-ascend","vllm","vllm-ascend"]})'
       printf 'runtime=%s\ncache_state=%s\ncache_base=%s\nvllm_cache_root=%s\ninductor_cache_dir=%s\ntriton_cache_dir=%s\n' "$runtime" "$cache_state" "$cache_base" "$VLLM_CACHE_ROOT" "$TORCHINDUCTOR_CACHE_DIR" "$TRITON_CACHE_DIR"
-      sha256sum "$SCRIPTS/$script" "$SCRIPTS/compare_tracks.py" "$SCRIPTS/run_a5.sh" "$SCRIPTS/process_supervisor.py" "$WORKSPACE/env.sh"
+      sha256sum "$SCRIPTS/$script" "$SCRIPTS/compare_tracks.py" "$SCRIPTS/run_model.sh" "$SCRIPTS/process_supervisor.py" "$WORKSPACE/env.sh"
     } > "$BENCH_OUT/environment.txt" 2>&1
     git -C vllm-ascend diff > "$BENCH_OUT/vllm-ascend.patch"
     printf 'MODEL_EVENT track_start model=%s track=%s time=%s\n' "$name" "$track" "$(date -Is)"
