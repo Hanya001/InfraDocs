@@ -55,7 +55,7 @@ COMPARISONS=()
 
 card_free() {
   local card=$1 info
-  info=$(npu-smi info -i "$card" 2>/dev/null) || return 1
+  info=$(npu-smi info 2>/dev/null) || return 1
   awk -F'|' -v card="$card" '
     function trim(x) { gsub(/^[ \t]+|[ \t]+$/, "", x); return x }
     NF >= 5 && trim($2) == card && trim($3) ~ /^[0-9]+$/ && trim($4) ~ /^[0-9]+$/ { busy=1 }
