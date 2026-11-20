@@ -1,6 +1,6 @@
 # benchmark：Inductor 测试工具
 
-本目录提供 6 个可独立组合的 vllm-ascend Inductor 测试工具，以及可选的 `run_matrix.sh` 批量编排脚本。测试范围与验收标准见《[Inductor适配测试覆盖模型与量化矩阵.md](../Inductor适配测试覆盖模型与量化矩阵.md)》；测试结果只归档到本机 `D:\HuaweiWorkSpace\Inductor\server-results\benchmark\`，不要写入本目录。
+本目录提供 6 个可独立组合的 vllm-ascend Inductor 测试工具，以及可选的 `run_performance.sh` 单模型性能基准和 `run_matrix.sh` 批量编排脚本。测试范围与验收标准见《[Inductor适配测试覆盖模型与量化矩阵.md](../Inductor适配测试覆盖模型与量化矩阵.md)》；测试结果只归档到本机 `D:\HuaweiWorkSpace\Inductor\server-results\benchmark\`，不要写入本目录。
 
 ## 使用原则
 
@@ -204,6 +204,23 @@ python "$SCRIPTS/accuracy.py" rescore \
 ```
 
 补算保留 `--num-prompts 200`，避免分母变回完整数据集；结果写入新文件，不改写原始结果。
+
+## 单模型性能基准
+
+`run_performance.sh` 将上述服务与性能命令组合为固定基准：ShareGPT QPS 1/4/16/inf 和 8192/1024、32768/1024 两组长上下文，均使用 `performance.py run` 的默认负载参数。
+
+```bash
+bash run_performance.sh \
+  --model /mnt/weight/Qwen3.8-27B-w8a8 \
+  --workspace <workspace绝对路径> \
+  --results <新的结果根目录绝对路径> \
+  --sharegpt <ShareGPT.json绝对路径> \
+  --devices 0,1 --tp 2
+```
+
+脚本固定运行两轮，顺序为 `default → Inductor → default → Inductor`。每条路径复用自己的编译缓存；启动前检查 NPU 进程和 HBM 占用，并通过卡锁防止同一批次重复分配。每轮完成后自动生成 6 份比较 JSON，两轮共 12 份，最后生成并打印 `<结果根目录>/performance/SUMMARY.md`。
+
+单卡模型使用 `--devices 0 --tp 1`；`--devices` 的数量必须等于 `--tp`。`--timeout` 控制每次服务进程的最长运行时间，默认 21600 秒。结果根目录必须不存在，避免覆盖历史数据。
 
 ## 可选的完整矩阵编排
 
