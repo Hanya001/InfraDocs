@@ -70,7 +70,7 @@
 | O-19 | 崩溃/量化 | A5 Qwen3.5-35B-A3B-W8A8-MTP 的 INT8 MoE 融合算子收到单个 `Parameter`，而接口要求 `Tensor[]` | eager跑不通 暂不解决 | 默认、Inductor 和 eager 均在 profiling 中复现；另有 `swiglu_limit`、`use_mxfp_quant` 无效关键字，当前未修改源码 | [专项定位](20261117_Qwen3.5-35B-W8A8-MTP融合量化算子参数错误.md) |
 | O-20 | 兼容性/底层算子 | A5 DeepSeek-V4-Flash-FP8 在 TP4 下将 64 个 Q head 切为每 rank 16 个，但 FP8 KV sparse-attention 仅支持 64/128 | 暂不解决 | 默认、Inductor 和 eager 均有 `got 16` 直接证据；不通过调整 TP 或删除校验规避，BF16 KV 替代路径尚未实测 | [专项定位](20261117_DeepSeek-V4-FP8-TP4稀疏注意力Head数限制.md)、[社区 #21395](https://github.com/vllm-project/vllm-ascend/issues/21395) |
 | O-21 | 数值/一致性 | A5 Qwen3.8-27B-W8A8 的 eager、default 和 Inductor 固定输入及 logprob 均存在路径差异 | 未解决，定位完成，无保留修复 | default/eager 本身也不一致；sigmoid 与 RMSNorm 对照可消除 default/Inductor 差异，但全局 sigmoid 原型已撤回；CANN NormQuant 融合的 eager 差异仍需单独处理 | [专项定位](20261122_Qwen3.8-27B-W8A8精度定位.md) |
-| O-22 | 启动/量化 | A5 Qwen3.6-35B-A3B-W8A8 的旧 NZ MoE 融合算子缺少动态 shape 配置，eager/default/Inductor 均在 profiling 中失败 | 当前环境已修复 | vLLM-Ascend `7db008b78` 切换到 `npu_grouped_matmul_swiglu_quant_v2`，保留融合；`87fe251e7` 的小尺寸真实 NPU MoE 测试通过 | [专项定位](20261123_Qwen3.6-35B-W8A8-MoE融合算子V2启动修复.md) |
+| O-22 | 启动/量化 | A5 Qwen3.6-35B-A3B-W8A8 的旧 NZ MoE 融合算子缺少动态 shape 配置，eager/default/Inductor 均在 profiling 中失败 | 当前环境已修复 | vLLM-Ascend `7db008b78` 切换到 `npu_grouped_matmul_swiglu_quant_v2`，保留融合；`b5cac2ec7` 增加常规接口单元测试和 TP2 E2E，E2E 暴露 0.1042 的 prefill logprob 差异 | [专项定位](20261123_Qwen3.6-35B-W8A8-MoE融合算子V2启动修复.md) |
 | R-01 | 正确性/编译 | Qwen3.5 的 GDN 后置 LayerNorm 被 TE fallback 吞掉，随后 `eps` 又被推导为 FP64 | 本地验证通过，尚未合入分支 | 保留 `triton_kernel_wrapper_mutation` 专用 lowering，并在 TE wrapper 中让用户 kernel 的 Python float 使用 FP32；0.8B/vLLM 0.33 冷编译和缓存复跑通过，未再出现连续 `!` | [专项定位](20261121_Qwen3.5-GDN-LayerNorm编译问题定位.md)、[PI-TN-18](<../../../inductor-meta-worktree/docs/vllm/vllm_ascend_inductor_design/stage design/function design pending issue/01_torch章.md>) |
 | R-02 | 兼容性/监控 | 旧 triton-ascend 的 `triton.knobs` 导致 JIT monitor 失败 | 旧栈临时规避，新栈待复测 | `f4bce8cd1` 容错降级 | [Stage5 TODO-3P-1](<../../../inductor-meta-worktree/docs/vllm/vllm_ascend_inductor_design/stage design/stage5/TODO.md>) |
 | R-03 | 性能/launcher | A5 Qwen3.8-27B-W8A8 的 RMSNorm 特化参数仍被 C launcher 打包，设备参数缓冲区与 TTIR 签名不一致 | 本地验证通过，尚未合入分支；上游专门 PR 未合入 | Triton-Ascend `make_launcher` 在设备打包时将 `constants` 参数视为 `constexpr` 跳过，Python 侧仍保留完整参数检查；常量特化和原融合/grid 全部保留，算子恢复至约 0.0895 ms | [专项定位](20261119_Qwen3.8-27B-W8A8-RMSNorm常量特化性能回退.md)、[性能复测](../tests/20261119_Qwen3.8-27B-w8a8_32768_1024_profiling.md)、[上游 Issue #2407](https://github.com/triton-lang/triton-ascend/issues/2407)、[上游 PR #2387](https://github.com/triton-lang/triton-ascend/pull/2387) |
@@ -229,7 +229,7 @@
 
 - **现象**：A5 `214build` 环境中，35B-W8A8 在初始化 profiling 阶段报 `aclnnGroupedMatmulSwigluQuantWeightNZ` 的 `Config_Error(EZ1013)`，旧 NZ 算子的动态 shape JSON 配置不存在。eager、default 和 Inductor 共用该失败路径。
 - **修复**：vLLM-Ascend `7db008b78` 将普通 W8A8 Dynamic MoE 融合分支切换到当前 CANN 已有动态 shape 配置的 `npu_grouped_matmul_swiglu_quant_v2`，同时适配权重/scale 列表、两个返回值并移除 V2 不支持的 `swiglu_limit`。融合功能保持开启。
-- **验证**：`87fe251e7` 将接口 mock 替换为 `test_apply_gmm1_act_quant_small_moe`，以两个 token、两个专家在真实 NPU 上完成动态量化和 MoE 融合计算，结果为 `1 passed, 13 deselected`；35B eager 生成、固定输入、MMLU/GSM8K 和两轮性能流程均已执行。
+- **验证**：`b5cac2ec7` 保留与同文件其他用例一致的接口单元测试，结果为 `1 passed, 13 deselected`，并新增 35B-W8A8 TP2 `compare_logprobs` E2E。E2E 两条路径均完成真实生成，但第二条输入的 prefill logprob 差为 0.1042，超过 0.0689 容差，结果记为 failed。35B eager 生成、固定输入、MMLU/GSM8K 和两轮性能流程均已执行。
 - **边界**：该提交解决当前环境的启动阻塞，不代表固定输入 logprob 已满足容差，也不提供旧 NZ 与 V2 的有效性能对比。后续 GPQA 启动失败缺底层栈，需另行定位。
 - **当前状态**：当前环境已修复。详见[专项定位](20261123_Qwen3.6-35B-W8A8-MoE融合算子V2启动修复.md)。
 
