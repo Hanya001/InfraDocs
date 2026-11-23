@@ -1,0 +1,156 @@
+diff --git a/test/_inductor/triton_experimental/test_package.py b/test/_inductor/triton_experimental/test_package.py
+index 8b967ee2d3..f4d656fd4d 100644
+--- a/test/_inductor/triton_experimental/test_package.py
++++ b/test/_inductor/triton_experimental/test_package.py
+@@ -1,4 +1,6 @@
+ import copy
++import hashlib
++import json
+ import os
+ import tempfile
+ from pathlib import Path
+@@ -11,7 +13,7 @@ import torch
+ import torch_npu  # noqa: F401
+ import torch_npu._inductor  # noqa: F401
+ from torch._inductor import config
+-from torch._inductor.codecache import compiled_fx_graph_hash
++from torch._inductor.codecache import CacheBase, compiled_fx_graph_hash
+ from torch._inductor.codegen.common import custom_backend_codegen_configs
+ from torch._inductor.codegen.triton import TritonKernel
+ from torch._inductor.runtime.runtime_utils import triton_hash_to_path_key
+@@ -99,6 +101,77 @@ class TestPackageIdentity(TestCase):
+ 
+ 
+ class TestPackageSystemIdentity(TestCase):
++    def setUp(self):
++        super().setUp()
++        self._get_system = CacheBase.__dict__["get_system"]
++        self._backend = os.environ.get("TORCHINDUCTOR_NPU_BACKEND")
++
++    def tearDown(self):
++        CacheBase.get_system = self._get_system
++        if self._backend is None:
++            os.environ.pop("TORCHINDUCTOR_NPU_BACKEND", None)
++        else:
++            os.environ["TORCHINDUCTOR_NPU_BACKEND"] = self._backend
++        super().tearDown()
++
++    def test_cache_system_changes_with_te_identity(self):
++        from torch_npu._inductor.triton_experimental import _cache_key
++
++        with mock.patch.dict(os.environ, {"TORCHINDUCTOR_NPU_BACKEND": "default"}):
++            baseline = copy.deepcopy(CacheBase.get_system())
++        _cache_key.install_cache_key_factor()
++        with mock.patch.dict(os.environ, {"TORCHINDUCTOR_NPU_BACKEND": "default"}):
++            self.assertEqual(CacheBase.get_system(), baseline)
++
++        systems = []
++        for version, digest in (("test-a", b"source-a"), ("test-a", b"source-b"), ("test-b", b"source-b")):
++            with (
++                mock.patch.dict(os.environ, {"TORCHINDUCTOR_NPU_BACKEND": "triton_experimental"}),
++                mock.patch.object(torch_npu, "__version__", version),
++                mock.patch.object(_cache_key, "_te_source_digest", return_value=digest),
++            ):
++                systems.append(CacheBase.get_system())
++        self.assertEqual(
++            systems[0]["version"]["triton_experimental"],
++            f"test-a:{b'source-a'.hex()}",
++        )
++        expected_hash = hashlib.sha256(
++            json.dumps(
++                {key: value for key, value in systems[0].items() if key != "hash"},
++                sort_keys=True,
++            ).encode("utf-8")
++        ).hexdigest()
++        self.assertEqual(systems[0]["hash"], expected_hash)
++        self.assertNotEqual(systems[0]["hash"], systems[1]["hash"])
++        self.assertNotEqual(systems[1]["hash"], systems[2]["hash"])
++
++    def test_inductor_adaptor_hash_changes_with_te_identity(self):
++        from vllm.compilation.compiler_interface import InductorAdaptor
++        from torch_npu._inductor.triton_experimental import _cache_key
++
++        _cache_key.install_cache_key_factor()
++        adaptor = InductorAdaptor(use_aot_compile=False)
++        with mock.patch.dict(os.environ, {"TORCHINDUCTOR_NPU_BACKEND": "default"}):
++            baseline = adaptor.compute_hash(None)
++        hashes = []
++        for digest in (b"source-a", b"source-b"):
++            with (
++                mock.patch.dict(os.environ, {"TORCHINDUCTOR_NPU_BACKEND": "triton_experimental"}),
++                mock.patch.object(_cache_key, "_te_source_digest", return_value=digest),
++            ):
++                hashes.append(adaptor.compute_hash(None))
++        self.assertNotEqual(hashes[0], hashes[1])
++        with mock.patch.dict(os.environ, {"TORCHINDUCTOR_NPU_BACKEND": "default"}):
++            self.assertEqual(adaptor.compute_hash(None), baseline)
++
++    def test_cache_key_factor_install_is_idempotent(self):
++        from torch_npu._inductor.triton_experimental import _cache_key
++
++        _cache_key.install_cache_key_factor()
++        installed = CacheBase.__dict__["get_system"]
++        _cache_key.install_cache_key_factor()
++        self.assertIs(CacheBase.__dict__["get_system"], installed)
++
+     def test_package_versions_change_native_fx_and_aot_keys(self):
+         from torch._functorch._aot_autograd.autograd_cache import autograd_cache_key
+         from torch._functorch._aot_autograd.schemas import AOTConfig
+diff --git a/torch_npu/_inductor/triton_experimental/__init__.py b/torch_npu/_inductor/triton_experimental/__init__.py
+index b3e320b494..815e5e2aaa 100644
+--- a/torch_npu/_inductor/triton_experimental/__init__.py
++++ b/torch_npu/_inductor/triton_experimental/__init__.py
+@@ -55,6 +55,9 @@ def _activate():
+ 
+     Statement order mirrors the original standalone package's import-time sequence.
+     """
++    from ._cache_key import install_cache_key_factor
++    install_cache_key_factor()
++
+     from . import device
+     from .npu_triton_heuristics import enable_mspti_autotune
+     # overrides' module body has an import-time side effect (size_asserts off);
+diff --git a/torch_npu/_inductor/triton_experimental/_cache_key.py b/torch_npu/_inductor/triton_experimental/_cache_key.py
+new file mode 100644
+index 0000000000..c4c27b8285
+--- /dev/null
++++ b/torch_npu/_inductor/triton_experimental/_cache_key.py
+@@ -0,0 +1,38 @@
++# Copyright (c) 2026, Huawei Technologies Co., Ltd
++#
++"""triton_experimental factors for the outer Inductor cache identity."""
++import hashlib
++import json
++import os
++
++import torch_npu
++from torch._inductor.codecache import CacheBase
++
++from .fx_passes import _te_source_digest
++
++_BACKEND_ENV = "TORCHINDUCTOR_NPU_BACKEND"
++_BACKEND_NAME = "triton_experimental"
++_INSTALLED = None
++
++
++def install_cache_key_factor():
++    global _INSTALLED
++    if _INSTALLED is not None and CacheBase.__dict__.get("get_system") is _INSTALLED:
++        return
++    prev = CacheBase.get_system
++
++    def get_system_with_te_factor():
++        system = prev()
++        if os.environ.get(_BACKEND_ENV) != _BACKEND_NAME:
++            return system
++        system.pop("hash", None)
++        system.setdefault("version", {})[_BACKEND_NAME] = (
++            f"{torch_npu.__version__}:{_te_source_digest().hex()}"
++        )
++        system["hash"] = hashlib.sha256(
++            json.dumps(system, sort_keys=True).encode("utf-8")
++        ).hexdigest()
++        return system
++
++    _INSTALLED = staticmethod(get_system_with_te_factor)
++    CacheBase.get_system = _INSTALLED

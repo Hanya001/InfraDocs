@@ -1,0 +1,89 @@
+From 5ef8650782885faefe5ba5d95f8323d5da1ba888 Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 14:05:15 +0000
+Subject: [PATCH] fix(compilation): preserve SP padding in MMRS fusion
+
+Signed-off-by: hanyaZ <zhenghanya1@huawei.com>
+---
+ .../test_mm_reduce_scatter_fusion_pass.py     | 40 +++++++++++--------
+ .../passes/mm_reduce_scatter_fusion_pass.py   |  4 +-
+ 2 files changed, 27 insertions(+), 17 deletions(-)
+
+diff --git a/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py b/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py
+index 34dcc2c8a..b801486bc 100644
+--- a/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py
++++ b/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py
+@@ -122,7 +122,7 @@ def _build_graph(
+         reduce_scatter = call(
+             ASCEND_SP_REDUCE_SCATTER_OP,
+             (scattered,),
+-            reduced_rows // TP_SIZE,
++            (reduced_rows + TP_SIZE - 1) // TP_SIZE,
+             OUTPUT_DIM,
+         )
+     else:
+@@ -199,22 +199,30 @@ class TestMatmulReduceScatterFusionPass(TestBase):
+         self.assertEqual(_targets(graph_module).count(FUSED_OP), 1)
+         self.assertNotIn(PAD_OP, _targets(graph_module))
+ 
+-    def test_ascend_sp_pattern_is_fused_without_padding(self):
+-        graph_module = _build_graph(pad_rows=None, use_ascend_sp=True)
+-        expected = next(
+-            node.meta["val"].shape
+-            for node in graph_module.graph.nodes
+-            if node.target is ASCEND_SP_REDUCE_SCATTER_OP
+-        )
+-        self._apply(graph_module)
++    def test_ascend_sp_pattern_pads_before_fusion(self):
++        for num_tokens, expected_pad_rows in ((8, 0), (7, 1)):
++            with self.subTest(num_tokens=num_tokens):
++                graph_module = _build_graph(num_tokens=num_tokens, pad_rows=None, use_ascend_sp=True)
++                expected = next(
++                    node.meta["val"].shape
++                    for node in graph_module.graph.nodes
++                    if node.target is ASCEND_SP_REDUCE_SCATTER_OP
++                )
++                self._apply(graph_module)
+ 
+-        self.assertEqual(_targets(graph_module).count(FUSED_OP), 1)
+-        self.assertNotIn(ASCEND_SP_REDUCE_SCATTER_OP, _targets(graph_module))
+-        self.assertNotIn(GEMM_OP, _targets(graph_module))
+-        self.assertNotIn(PAD_OP, _targets(graph_module))
+-        fused = next(node for node in graph_module.graph.nodes if node.target is FUSED_OP)
+-        self.assertEqual(fused.args[2:4], (HCOM_NAME, TP_SIZE))
+-        self.assertEqual(fused.meta["val"].shape, expected)
++                self.assertEqual(_targets(graph_module).count(FUSED_OP), 1)
++                self.assertNotIn(ASCEND_SP_REDUCE_SCATTER_OP, _targets(graph_module))
++                self.assertNotIn(GEMM_OP, _targets(graph_module))
++                fused = next(node for node in graph_module.graph.nodes if node.target is FUSED_OP)
++                padded_input = fused.args[0]
++                if expected_pad_rows == 0:
++                    self.assertEqual(padded_input.op, "placeholder")
++                else:
++                    self.assertIs(padded_input.target, PAD_OP)
++                    self.assertEqual(padded_input.args[1], [0, 0, 0, expected_pad_rows])
++                    self.assertEqual(padded_input.args[0].op, "placeholder")
++                self.assertEqual(fused.args[2:4], (HCOM_NAME, TP_SIZE))
++                self.assertEqual(fused.meta["val"].shape, expected)
+ 
+     def test_legacy_constant_pad_pattern_is_fused(self):
+         graph_module = _build_graph(use_constant_pad=True)
+diff --git a/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py b/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
+index 59f654ebf..3dbee0269 100644
+--- a/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
++++ b/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
+@@ -194,8 +194,10 @@ class AscendSPMatmulReduceScatterPattern(_MatmulReduceScatterPattern):
+ 
+     def get_replacement(self):
+         def replacement(x: torch.Tensor, weight: torch.Tensor) -> torch.Tensor:
++            pad_rows = (-x.shape[0]) % self.tp_size
++            padded = torch.ops.aten.constant_pad_nd.default(x, [0, 0, 0, pad_rows], 0.0)
+             return torch.ops.vllm.npu_mm_reduce_scatter_base.default(
+-                x, weight.t(), self.hcom_name, self.tp_size, reduce_op="sum"
++                padded, weight.t(), self.hcom_name, self.tp_size, reduce_op="sum"
+             )
+ 
+         return replacement
+-- 
+2.34.1
+

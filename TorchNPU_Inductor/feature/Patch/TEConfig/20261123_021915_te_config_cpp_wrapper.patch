@@ -1,0 +1,325 @@
+diff --git a/docs/source/user_guide/configuration/additional_config.md b/docs/source/user_guide/configuration/additional_config.md
+index 165ebf119..efdbeade5 100644
+--- a/docs/source/user_guide/configuration/additional_config.md
++++ b/docs/source/user_guide/configuration/additional_config.md
+@@ -135,6 +135,7 @@ Design / ops (analysis branch): `docs/source/developer_guide/Design_Documents/ru
+ | `fuse_norm_quant`  | bool | `True` | Whether to enable fuse_norm_quant pass. On the inductor track these `fuse_*` flags chain the Ascend fusion passes into the track's post-grad pass manager (same conditions as the legacy track: 310P skips `fuse_norm_quant`/`fuse_muls_add`; W4A4 models skip `fuse_norm_quant`). These are the `ascend_compilation_config` flags — upstream `pass_config` flags of the same names stay off on the track. |
+ | `fuse_qknorm_rope` | bool | `True` | Whether to enable fuse_qknorm_rope pass. If Triton is not in the environment, set it to False. |
+ | `fuse_muls_add` | bool | `True` | Whether to enable fuse_muls_add pass.|
++| `triton_experimental_config` | dict | `{}` | Per-engine overrides for `torch_npu._inductor.triton_experimental.config`, applied only while the Inductor adaptor compiles. Keys are validated against the live triton_experimental config, including dotted sub-config keys such as `npu_triton.codegen_upcast_to_fp32`; values are parsed as the corresponding field types. Unknown keys and invalid values are rejected. |
+ 
+ **ascend_warmup_config**
+ 
+diff --git a/tests/ut/compilation/test_compile_backend_track.py b/tests/ut/compilation/test_compile_backend_track.py
+index 71c7d6186..1c9d4955f 100644
+--- a/tests/ut/compilation/test_compile_backend_track.py
++++ b/tests/ut/compilation/test_compile_backend_track.py
+@@ -251,6 +251,26 @@ class TestApplyInductorTrackDefaults(TrackTestBase):
+         NPUPlatform._apply_inductor_track_defaults(vllm_config)  # no raise
+         self.assertFalse(vllm_config.compilation_config.inductor_compile_config["combo_kernels"])
+ 
++    def test_cpp_wrapper_derives_autotune_at_compile_time(self):
++        from vllm_ascend.platform import NPUPlatform
++
++        for cpp_wrapper, explicit_value, expected in (
++            (True, None, True),
++            (True, False, False),
++            (False, None, None),
++        ):
++            with self.subTest(cpp_wrapper=cpp_wrapper, explicit_value=explicit_value):
++                vllm_config = self._make_vllm_config(track=True)
++                inductor_config = vllm_config.compilation_config.inductor_compile_config
++                inductor_config["cpp_wrapper"] = cpp_wrapper
++                if explicit_value is not None:
++                    inductor_config["triton.autotune_at_compile_time"] = explicit_value
++                NPUPlatform._apply_inductor_track_defaults(vllm_config)
++                if expected is None:
++                    self.assertNotIn("triton.autotune_at_compile_time", inductor_config)
++                else:
++                    self.assertEqual(inductor_config["triton.autotune_at_compile_time"], expected)
++
+     def test_non_npu_device_is_skipped(self):
+         from vllm_ascend.platform import NPUPlatform
+ 
+diff --git a/tests/ut/test_ascend_config.py b/tests/ut/test_ascend_config.py
+index 95ad7f2c3..d54efbd7f 100644
+--- a/tests/ut/test_ascend_config.py
++++ b/tests/ut/test_ascend_config.py
+@@ -1434,6 +1434,50 @@ class TestSubconfigPydanticTypeValidation(TestBase):
+         with self.assertRaises(ValueError):
+             AscendCompilationConfig(unknown_key=1)
+ 
++    def test_triton_experimental_config_defaults_empty(self):
++        with patch("vllm_ascend.ascend_config.TypeAdapter") as type_adapter:
++            cfg = AscendCompilationConfig()
++        self.assertEqual(cfg.triton_experimental_config, {})
++        type_adapter.assert_not_called()
++
++    def test_triton_experimental_config_validates_and_normalizes(self):
++        cfg = AscendCompilationConfig(
++            triton_experimental_config={
++                "debug": "false",
++                "permute_gather_stride_gate_bytes": "512",
++                "event_bench_target_ms": "2.5",
++                "nonnegative_clamp_mode": "off",
++                "pin_xr": None,
++                "npu_triton.codegen_upcast_to_fp32": "false",
++            }
++        )
++        self.assertEqual(
++            cfg.triton_experimental_config,
++            {
++                "debug": False,
++                "permute_gather_stride_gate_bytes": 512,
++                "event_bench_target_ms": 2.5,
++                "nonnegative_clamp_mode": "off",
++                "pin_xr": None,
++                "npu_triton.codegen_upcast_to_fp32": False,
++            },
++        )
++
++    def test_triton_experimental_config_rejects_unknown_key_and_bad_type(self):
++        with self.assertRaisesRegex(ValueError, "Unknown triton_experimental_config key"):
++            AscendCompilationConfig(triton_experimental_config={"unknown": True})
++        with self.assertRaisesRegex(ValueError, "triton_experimental_config.debug"):
++            AscendCompilationConfig(triton_experimental_config={"debug": "not-a-bool"})
++
++    def test_triton_experimental_config_uses_vllm_config_hash(self):
++        first = _VllmConfig(
++            additional_config={"ascend_compilation_config": {"triton_experimental_config": {"debug": False}}}
++        )
++        second = _VllmConfig(
++            additional_config={"ascend_compilation_config": {"triton_experimental_config": {"debug": True}}}
++        )
++        self.assertNotEqual(first.compute_hash(), second.compute_hash())
++
+     def test_short_request_first_config_unknown_key_forbidden(self):
+         # Was hand-written unknown-key check; now extra="forbid".
+         with self.assertRaises(ValueError):
+diff --git a/vllm_ascend/ascend_config.py b/vllm_ascend/ascend_config.py
+index a01682de1..62555356e 100644
+--- a/vllm_ascend/ascend_config.py
++++ b/vllm_ascend/ascend_config.py
+@@ -151,6 +151,25 @@ class AscendCompilationConfig:
+     # bit-identical on both tracks (default-off also honors the original
+     # hold-design 3.2 "first version off, enable experiment-driven" promise).
+     fuse_norm_quant_dynamic: bool = False
++    triton_experimental_config: dict[str, bool | int | float | str | None] = dataclasses.field(default_factory=dict)
++
++    @field_validator("triton_experimental_config")
++    @classmethod
++    def _validate_triton_experimental_config(cls, value: dict[str, bool | int | float | str | None]):
++        if not value:
++            return value
++        from torch_npu._inductor.triton_experimental import config as te_config
++
++        known_keys = te_config.get_config_copy()
++        normalized = {}
++        for key, option in value.items():
++            if key not in known_keys:
++                raise ValueError(f"Unknown triton_experimental_config key: {key!r}")
++            try:
++                normalized[key] = TypeAdapter(te_config.get_type(key)).validate_python(option)
++            except ValueError as exc:
++                raise ValueError(f"Invalid value for triton_experimental_config.{key}: {option!r}") from exc
++        return normalized
+ 
+     @model_validator(mode="before")
+     @classmethod
+diff --git a/vllm_ascend/patch/__init__.py b/vllm_ascend/patch/__init__.py
+index d129482db..cfe7f3d60 100644
+--- a/vllm_ascend/patch/__init__.py
++++ b/vllm_ascend/patch/__init__.py
+@@ -791,6 +791,20 @@
+ # ========#
+ # Entries are listed in alphabetical order by file name.
+ #
++# ** File: worker/patch_triton_experimental.py **
++# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++#   1. `vllm.compilation.compiler_interface.InductorAdaptor.compute_hash/compile`
++#    Why:
++#       vLLM has no backend hook for scoping torch_npu triton_experimental config to one engine's
++#       Inductor compilation; process-global overrides would leak across engines.
++#    How:
++#       Copy the validated additional_config values to each adaptor in
++#       compute_hash and enter the triton_experimental restoring patch context around upstream compile.
++#    Related PR (if no, explain why):
++#       No upstream backend-specific Inductor configuration hook exists.
++#    Future Plan:
++#       Remove when vLLM exposes a backend configuration context for compilation.
++#
+ # ** 2. File: worker/patch_deepseek_v2.py**
+ # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ #   1. `vllm.model_executor.models.deepseek_v2.DeepseekV2MLAAttention.__init__`
+diff --git a/vllm_ascend/patch/worker/__init__.py b/vllm_ascend/patch/worker/__init__.py
+index a3e144ae8..ad25748a1 100644
+--- a/vllm_ascend/patch/worker/__init__.py
++++ b/vllm_ascend/patch/worker/__init__.py
+@@ -64,6 +64,7 @@ import vllm_ascend.patch.worker.patch_block_table  # noqa
+ import vllm_ascend.patch.worker.patch_staged_writes  # noqa
+ import vllm_ascend.patch.worker.patch_attn_utils  # noqa
+ import vllm_ascend.patch.worker.patch_model_runner  # noqa
++import vllm_ascend.patch.worker.patch_triton_experimental  # noqa
+ 
+ import vllm_ascend.patch.worker.patch_eagle_speculator  # noqa
+ import vllm_ascend.patch.worker.patch_dflash_speculator  # noqa
+diff --git a/vllm_ascend/platform.py b/vllm_ascend/platform.py
+index d152b9d84..00b1f695a 100644
+--- a/vllm_ascend/platform.py
++++ b/vllm_ascend/platform.py
+@@ -563,6 +563,8 @@ class NPUPlatform(Platform):
+             setattr(compilation_config.pass_config, flag, False)
+         # combo kernels have no triton_experimental adaptation and can fail hard.
+         compilation_config.inductor_compile_config.update({"combo_kernels": False, "benchmark_combo_kernel": False})
++        if compilation_config.inductor_compile_config.get("cpp_wrapper", False):
++            compilation_config.inductor_compile_config.setdefault("triton.autotune_at_compile_time", True)
+ 
+     @classmethod
+     def _setup_inductor_track_envs(cls, vllm_config: VllmConfig) -> None:
+diff --git a/vllm_ascend/patch/worker/patch_triton_experimental.py b/vllm_ascend/patch/worker/patch_triton_experimental.py
+new file mode 100644
+index 000000000..7ce985b7b
+--- /dev/null
++++ b/vllm_ascend/patch/worker/patch_triton_experimental.py
+@@ -0,0 +1,37 @@
++# SPDX-License-Identifier: Apache-2.0
++# SPDX-FileCopyrightText: Copyright contributors to the vLLM-Ascend project
++"""Scope each engine's triton_experimental configuration to Inductor compilation."""
++
++from typing import Any
++
++from torch_npu._inductor.triton_experimental import config as te_config
++from vllm.compilation.compiler_interface import InductorAdaptor
++from vllm.config import VllmConfig
++
++from vllm_ascend.ascend_config import init_ascend_config
++
++_ORIGINAL_COMPUTE_HASH = InductorAdaptor.compute_hash
++_ORIGINAL_COMPILE = InductorAdaptor.compile
++
++
++def compute_hash(self: InductorAdaptor, vllm_config: VllmConfig) -> str:
++    self._triton_experimental_config = dict(
++        init_ascend_config(vllm_config).ascend_compilation_config.triton_experimental_config
++    )
++    return _ORIGINAL_COMPUTE_HASH(self, vllm_config)
++
++
++def compile(
++    self: InductorAdaptor,
++    graph: Any,
++    example_inputs: list[Any],
++    compiler_config: dict[str, Any],
++    compile_range: Any,
++    key: str | None = None,
++) -> tuple[Any, Any]:
++    with te_config.patch(self._triton_experimental_config):
++        return _ORIGINAL_COMPILE(self, graph, example_inputs, compiler_config, compile_range, key)
++
++
++InductorAdaptor.compute_hash = compute_hash
++InductorAdaptor.compile = compile
+diff --git a/tests/ut/patch/worker/test_patch_triton_experimental.py b/tests/ut/patch/worker/test_patch_triton_experimental.py
+new file mode 100644
+index 000000000..a4dbca015
+--- /dev/null
++++ b/tests/ut/patch/worker/test_patch_triton_experimental.py
+@@ -0,0 +1,98 @@
++# SPDX-License-Identifier: Apache-2.0
++# SPDX-FileCopyrightText: Copyright contributors to the vLLM-Ascend project
++
++import runpy
++import unittest
++from pathlib import Path
++from types import SimpleNamespace
++from unittest.mock import Mock, patch
++
++from torch_npu._inductor.triton_experimental import config as te_config
++from vllm.compilation.compiler_interface import InductorAdaptor
++
++PATCH_PATH = Path(__file__).resolve().parents[4] / "vllm_ascend/patch/worker/patch_triton_experimental.py"
++
++
++class TestTritonExperimentalPatch(unittest.TestCase):
++    def setUp(self):
++        self.original_compute_hash = InductorAdaptor.compute_hash
++        self.original_compile = InductorAdaptor.compile
++        self.seen_debug_values = []
++        self.upstream_compute_hash = Mock(return_value="upstream-hash")
++
++        def upstream_compile(adaptor, graph, example_inputs, compiler_config, compile_range, key=None):
++            self.seen_debug_values.append(te_config.debug)
++            if compiler_config.get("raise"):
++                raise RuntimeError("compile failed")
++            return "compiled", key
++
++        self.upstream_compile = Mock(side_effect=upstream_compile)
++        InductorAdaptor.compute_hash = self.upstream_compute_hash
++        InductorAdaptor.compile = self.upstream_compile
++        self.init_ascend_config = Mock(side_effect=lambda config: config.ascend_config)
++        self.init_patcher = patch("vllm_ascend.ascend_config.init_ascend_config", self.init_ascend_config)
++        self.init_patcher.start()
++        runpy.run_path(str(PATCH_PATH))
++
++    def tearDown(self):
++        self.init_patcher.stop()
++        InductorAdaptor.compute_hash = self.original_compute_hash
++        InductorAdaptor.compile = self.original_compile
++
++    @staticmethod
++    def _vllm_config(te_options):
++        return SimpleNamespace(
++            ascend_config=SimpleNamespace(
++                ascend_compilation_config=SimpleNamespace(triton_experimental_config=te_options)
++            )
++        )
++
++    @staticmethod
++    def _compile(adaptor, compiler_config=None):
++        return adaptor.compile(object(), [], compiler_config or {}, object(), key="key")
++
++    def test_compute_hash_copies_engine_config_and_delegates(self):
++        adaptor = InductorAdaptor(use_aot_compile=False)
++        options = {"debug": True}
++        vllm_config = self._vllm_config(options)
++
++        self.assertEqual(adaptor.compute_hash(vllm_config), "upstream-hash")
++        self.assertEqual(adaptor._triton_experimental_config, options)
++        self.assertIsNot(adaptor._triton_experimental_config, options)
++        self.init_ascend_config.assert_called_once_with(vllm_config)
++        self.upstream_compute_hash.assert_called_once_with(adaptor, vllm_config)
++
++    def test_compile_scopes_and_restores_config(self):
++        adaptor = InductorAdaptor(use_aot_compile=False)
++        original_debug = te_config.debug
++        adaptor.compute_hash(self._vllm_config({"debug": not original_debug}))
++
++        self.assertEqual(self._compile(adaptor), ("compiled", "key"))
++        self.assertEqual(self.seen_debug_values, [not original_debug])
++        self.assertEqual(te_config.debug, original_debug)
++
++    def test_compile_restores_config_after_exception(self):
++        adaptor = InductorAdaptor(use_aot_compile=False)
++        original_debug = te_config.debug
++        adaptor.compute_hash(self._vllm_config({"debug": not original_debug}))
++
++        with self.assertRaisesRegex(RuntimeError, "compile failed"):
++            self._compile(adaptor, {"raise": True})
++        self.assertEqual(self.seen_debug_values, [not original_debug])
++        self.assertEqual(te_config.debug, original_debug)
++
++    def test_instances_keep_configs_isolated(self):
++        first = InductorAdaptor(use_aot_compile=False)
++        second = InductorAdaptor(use_aot_compile=False)
++        original_debug = te_config.debug
++        first.compute_hash(self._vllm_config({"debug": not original_debug}))
++        second.compute_hash(self._vllm_config({"debug": original_debug}))
++
++        self._compile(first)
++        self._compile(second)
++        self.assertEqual(self.seen_debug_values, [not original_debug, original_debug])
++        self.assertEqual(te_config.debug, original_debug)
++
++
++if __name__ == "__main__":
++    unittest.main()

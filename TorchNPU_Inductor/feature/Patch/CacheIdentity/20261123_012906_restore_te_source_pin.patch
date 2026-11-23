@@ -1,0 +1,76 @@
+diff --git a/tests/ut/compilation/test_inductor_track_fusion_chain.py b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+index 977b7b680..286d5e8b2 100644
+--- a/tests/ut/compilation/test_inductor_track_fusion_chain.py
++++ b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+@@ -154,6 +154,40 @@ class TestConfigureInjection(FusionChainTestBase):
+         self.assertNotIn(MulsAddFusionPass, types)
+ 
+ 
++class TestTeSourcePinPassInjection(FusionChainTestBase):
++    def test_all_flags_off_still_injects_source_pin(self):
++        from torch_npu._inductor.triton_experimental.fx_passes import TeSourcePinPass
++        from vllm.compilation.passes.inductor_pass import CallableInductorPass
++
++        pin_uuid = b"\x00\x01\xfe\xff"
++        with (
++            patch("vllm_ascend.device.device_config.is_310p", return_value=False),
++            patch.object(TeSourcePinPass, "uuid", return_value=pin_uuid),
++        ):
++            manager, _ = self._configure(
++                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
++            )
++
++        wrappers = [p for p in manager.passes if isinstance(p, CallableInductorPass)]
++        self.assertEqual(len(wrappers), 1)
++        self.assertIsInstance(wrappers[0].callable, TeSourcePinPass)
++        self.assertEqual(wrappers[0].uuid(), pin_uuid.hex())
++
++    def test_source_pin_uuid_changes_manager_aggregate_uuid(self):
++        from torch_npu._inductor.triton_experimental.fx_passes import TeSourcePinPass
++
++        with patch.object(TeSourcePinPass, "uuid", return_value=b"\x01" * 32):
++            first, _ = self._configure(
++                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
++            )
++        with patch.object(TeSourcePinPass, "uuid", return_value=b"\x02" * 32):
++            second, _ = self._configure(
++                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
++            )
++
++        self.assertNotEqual(_aggregate_uuid(first), _aggregate_uuid(second))
++
++
+ class TestUuidFactorization(FusionChainTestBase):
+     @unittest.skipUnless(_NPU_AVAILABLE, "pass 实例化需 NPU 示例张量")
+     def test_config_factors_change_uuid(self):
+diff --git a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+index 0b34c7cbe..2f8f4b9e6 100644
+--- a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
++++ b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+@@ -36,7 +36,7 @@ import inspect
+ 
+ import torch
+ import torch.fx
+-from vllm.compilation.passes.inductor_pass import InductorPass
++from vllm.compilation.passes.inductor_pass import CallableInductorPass, InductorPass
+ from vllm.compilation.passes.pass_manager import PostGradPassManager
+ from vllm.compilation.passes.vllm_inductor_pass import VllmInductorPass
+ from vllm.config import VllmConfig
+@@ -161,6 +161,17 @@ class AscendPostGradPassManager(PostGradPassManager):
+         self.fix_functionalization = noop  # todo: Allen 这里为什么会炸？待定位
+         self._inject_ascend_fusion_passes(config)
+ 
++        try:
++            from torch_npu._inductor.triton_experimental.fx_passes import TeSourcePinPass
++        except ImportError:
++            logger.warning(
++                "torch_npu TeSourcePinPass is unavailable; backend source changes will not "
++                "invalidate the Inductor FX graph cache."
++            )
++        else:
++            pin = TeSourcePinPass()
++            self.passes.append(CallableInductorPass(pin, uuid=pin.uuid().hex()))
++
+     def _inject_ascend_fusion_passes(self, config: VllmConfig) -> None:
+         """Chain the VA fusion passes back onto the inductor track (stage3 02 §2).
+ 

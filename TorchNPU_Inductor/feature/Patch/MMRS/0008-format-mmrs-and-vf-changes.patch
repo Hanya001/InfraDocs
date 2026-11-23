@@ -1,0 +1,155 @@
+From c8af34cae813691eecba0681cd96fab7b0686240 Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 14:17:29 +0000
+Subject: [PATCH] style(compilation): format MMRS and VF changes
+
+Signed-off-by: hanyaZ <zhenghanya1@huawei.com>
+---
+ .../test_inductor_track_fusion_chain.py       | 31 ++++++-------------
+ .../ascend_post_grad_pass_manager.py          |  9 ++----
+ .../passes/mm_reduce_scatter_fusion_pass.py   |  6 +---
+ 3 files changed, 12 insertions(+), 34 deletions(-)
+
+diff --git a/tests/ut/compilation/test_inductor_track_fusion_chain.py b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+index 72d1ec225..ac9b8d853 100644
+--- a/tests/ut/compilation/test_inductor_track_fusion_chain.py
++++ b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+@@ -27,6 +27,7 @@ Device note: pass 实例化经 pattern 注册创建 NPU 示例张量——依赖
+ 构图须用 ``make_fx(tracing_mode="symbolic")``：symbolic_trace 无节点 meta，
+ pattern_matcher 全不命中（T0''-2 发现 1）。
+ """
++
+ import importlib
+ import unittest
+ from types import SimpleNamespace
+@@ -166,9 +167,7 @@ class TestConfigureInjection(FusionChainTestBase):
+         )
+ 
+         with patch("vllm_ascend.device.device_config.is_310p", return_value=False):
+-            manager, _ = self._configure(
+-                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
+-            )
++            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
+         fusion_types = (AddRMSNormQuantFusionPass, QKNormRopeFusionPass, MulsAddFusionPass)
+         self.assertFalse([p for p in manager.passes if isinstance(p, fusion_types)])
+ 
+@@ -216,9 +215,7 @@ class TestMMRSConfigureInjection(FusionChainTestBase):
+                 return_value=2,
+             ),
+         ):
+-            manager, _ = self._configure(
+-                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
+-            )
++            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
+ 
+         self.assertEqual(sum(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes), 1)
+         profile.supports.assert_called_once_with(HardwareCapability.GRAPH_MM_REDUCE_SCATTER_FUSION)
+@@ -229,9 +226,7 @@ class TestMMRSConfigureInjection(FusionChainTestBase):
+         )
+ 
+         with patch("vllm_ascend.compilation.ascend_post_grad_pass_manager.enable_sp", return_value=False):
+-            manager, _ = self._configure(
+-                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
+-            )
++            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
+         self.assertFalse(any(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes))
+ 
+     def test_unsupported_hardware_does_not_inject_mmrs(self):
+@@ -246,9 +241,7 @@ class TestMMRSConfigureInjection(FusionChainTestBase):
+             patch(f"{module}.enable_sp", return_value=True),
+             patch(f"{module}.get_current_hardware_profile", return_value=profile),
+         ):
+-            manager, _ = self._configure(
+-                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
+-            )
++            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
+         self.assertFalse(any(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes))
+ 
+ 
+@@ -275,9 +268,7 @@ class TestUuidFactorization(FusionChainTestBase):
+         """③ 聚合层面：flag 开/关两份 passes 列表 → PostGradPassManager 聚合 uuid 不同。"""
+         with patch("vllm_ascend.device.device_config.is_310p", return_value=False):
+             on, _ = self._configure()
+-            off, _ = self._configure(
+-                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
+-            )
++            off, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
+         self.assertNotEqual(_aggregate_uuid(on), _aggregate_uuid(off))
+ 
+ 
+@@ -297,9 +288,7 @@ class TestCustomOpsMismatchWarn(FusionChainTestBase):
+                 "vllm_ascend.compilation.ascend_post_grad_pass_manager._required_custom_ops_missing",
+                 return_value=True,
+             ),
+-            self.assertLogs(
+-                "vllm_ascend.compilation.ascend_post_grad_pass_manager", level="WARNING"
+-            ) as logs,
++            self.assertLogs("vllm_ascend.compilation.ascend_post_grad_pass_manager", level="WARNING") as logs,
+         ):
+             self._configure()
+         self.assertTrue(any("custom_ops" in msg for msg in logs.output))
+@@ -365,8 +354,8 @@ class TestMatchTableObservability(FusionChainTestBase):
+     def test_muls_add_hit_records_match_table(self):
+         """⑥ make_fx(symbolic) 命中图 → match_table 记录（T0''-2 发现 1 的构图法）。"""
+         from torch.fx.experimental.proxy_tensor import make_fx
+-
+         from vllm.compilation.passes.vllm_inductor_pass import VllmPatternMatcherPass
++
+         from vllm_ascend.compilation.passes.muls_add_pass import MulsAddFusionPass
+ 
+         with patch("vllm_ascend.device.device_config.is_310p", return_value=False):
+@@ -386,6 +375,4 @@ class TestMatchTableObservability(FusionChainTestBase):
+         self.assertEqual(fused.matched_count, 1)
+         self.assertIn("muls_add", gm.code)
+         # match_table（worker RPC get_compilation_match_table 的取数通道）应累计命中
+-        self.assertGreaterEqual(
+-            VllmPatternMatcherPass.match_table.get("muls_add_fusion_pass", 0), before + 1
+-        )
++        self.assertGreaterEqual(VllmPatternMatcherPass.match_table.get("muls_add_fusion_pass", 0), before + 1)
+diff --git a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+index f9a0c81bd..c703d5b13 100644
+--- a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
++++ b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+@@ -183,10 +183,7 @@ class AscendPostGradPassManager(PostGradPassManager):
+             # On the live track the AscendConfig singleton is always initialized
+             # before compile (worker init). A bare-config caller (unit tests)
+             # reaches here: warn and skip injection rather than crash configure.
+-            logger.warning(
+-                "AscendConfig not initialized; skip Ascend fusion-pass injection "
+-                "(fuse flags unreadable)."
+-            )
++            logger.warning("AscendConfig not initialized; skip Ascend fusion-pass injection (fuse flags unreadable).")
+             return
+         # Stage-4 batch2 #9 (R7): on the inductor track, triton_experimental
+         # installs its npu-op decompositions (e.g. npu_rms_norm -> primitive
+@@ -213,9 +210,7 @@ class AscendPostGradPassManager(PostGradPassManager):
+         if acc.fuse_norm_quant and not is_310p():
+             from .passes.norm_quant_fusion_pass import AddRMSNormQuantFusionPass
+ 
+-            self.passes.append(
+-                AddRMSNormQuantFusionPass(config, dynamic_quant_fusion=acc.fuse_norm_quant_dynamic)
+-            )
++            self.passes.append(AddRMSNormQuantFusionPass(config, dynamic_quant_fusion=acc.fuse_norm_quant_dynamic))
+ 
+         if acc.fuse_qknorm_rope:
+             from .passes.qknorm_rope_fusion_pass import QKNormRopeFusionPass
+diff --git a/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py b/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
+index 3dbee0269..c485f8bd3 100644
+--- a/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
++++ b/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
+@@ -120,11 +120,7 @@ class _MatmulReduceScatterPattern(BasePattern):
+         def supported(match: Match) -> bool:
+             gemm = next((node for node in match.nodes if node.target is _GEMM_OP), None)
+             reduce_scatter = next(
+-                (
+-                    node
+-                    for node in match.nodes
+-                    if node.target in (_REDUCE_SCATTER_OP, _ASCEND_SP_REDUCE_SCATTER_OP)
+-                ),
++                (node for node in match.nodes if node.target in (_REDUCE_SCATTER_OP, _ASCEND_SP_REDUCE_SCATTER_OP)),
+                 None,
+             )
+             if gemm is None or reduce_scatter is None:
+-- 
+2.34.1
+

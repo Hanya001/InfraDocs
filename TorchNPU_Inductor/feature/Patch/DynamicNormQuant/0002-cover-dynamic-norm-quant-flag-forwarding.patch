@@ -1,0 +1,57 @@
+From 7fc0fed88421587b65b1275920b0a2273c045f95 Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 12:44:11 +0000
+Subject: [PATCH] test(compilation): cover dynamic norm-quant flag forwarding
+
+Signed-off-by: hanyaZ <zhenghanya1@huawei.com>
+---
+ .../test_inductor_track_fusion_chain.py       | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/tests/ut/compilation/test_inductor_track_fusion_chain.py b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+index 977b7b680..19f10943f 100644
+--- a/tests/ut/compilation/test_inductor_track_fusion_chain.py
++++ b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+@@ -45,7 +45,12 @@ except Exception:
+     _NPU_AVAILABLE = False
+ 
+ 
+-def _track_vllm_config(fuse_norm_quant=None, fuse_qknorm_rope=None, fuse_muls_add=None):
++def _track_vllm_config(
++    fuse_norm_quant=None,
++    fuse_qknorm_rope=None,
++    fuse_muls_add=None,
++    fuse_norm_quant_dynamic=None,
++):
+     """带 fuse flags 的轨上 VllmConfig（bare + SimpleNamespace model_config）。
+ 
+     轨经上游正门（compilation_config.backend="inductor"）请求；fuse flags
+@@ -56,6 +61,7 @@ def _track_vllm_config(fuse_norm_quant=None, fuse_qknorm_rope=None, fuse_muls_ad
+         ("fuse_norm_quant", fuse_norm_quant),
+         ("fuse_qknorm_rope", fuse_qknorm_rope),
+         ("fuse_muls_add", fuse_muls_add),
++        ("fuse_norm_quant_dynamic", fuse_norm_quant_dynamic),
+     ):
+         if v is not None:
+             ascend[k] = v
+@@ -122,6 +128,17 @@ class TestConfigureInjection(FusionChainTestBase):
+         self.assertIn(QKNormRopeFusionPass, types)
+         self.assertIn(MulsAddFusionPass, types)
+ 
++    @unittest.skipUnless(_NPU_AVAILABLE, "pass 实例化需 NPU 示例张量")
++    def test_dynamic_norm_quant_flag_is_forwarded(self):
++        from vllm_ascend.compilation.passes.norm_quant_fusion_pass import (
++            AddRMSNormQuantFusionPass,
++        )
++
++        with patch("vllm_ascend.device.device_config.is_310p", return_value=False):
++            manager, _ = self._configure(fuse_norm_quant_dynamic=True)
++        fusion_pass = next(p for p in manager.passes if isinstance(p, AddRMSNormQuantFusionPass))
++        self.assertEqual(fusion_pass._uuid_factors["dyn_fusion"], "True")
++
+     def test_all_flags_off_injects_nothing(self):
+         """② 三 flag 显式 False → 无融合 pass 注入（CPU 安全；elide wrapper 不受 flag 门控）。"""
+         from vllm_ascend.compilation.passes.muls_add_pass import MulsAddFusionPass
+-- 
+2.34.1
+

@@ -1,0 +1,118 @@
+From 7d8d0740f19b113b68a3cbc48743cb7ccf6f149b Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 13:32:24 +0000
+Subject: [PATCH] feat(compilation): expose VF Fusion mode on NPU
+
+Signed-off-by: hanyaZ <zhenghanya1@huawei.com>
+---
+ .../configuration/additional_config.md        |  1 +
+ .../test_inductor_track_fusion_chain.py       | 20 +++++++++++++++++++
+ vllm_ascend/ascend_config.py                  |  1 +
+ .../ascend_post_grad_pass_manager.py          |  5 ++++-
+ 4 files changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/docs/source/user_guide/configuration/additional_config.md b/docs/source/user_guide/configuration/additional_config.md
+index 165ebf119..25236ea3e 100644
+--- a/docs/source/user_guide/configuration/additional_config.md
++++ b/docs/source/user_guide/configuration/additional_config.md
+@@ -135,6 +135,7 @@ Design / ops (analysis branch): `docs/source/developer_guide/Design_Documents/ru
+ | `fuse_norm_quant`  | bool | `True` | Whether to enable fuse_norm_quant pass. On the inductor track these `fuse_*` flags chain the Ascend fusion passes into the track's post-grad pass manager (same conditions as the legacy track: 310P skips `fuse_norm_quant`/`fuse_muls_add`; W4A4 models skip `fuse_norm_quant`). These are the `ascend_compilation_config` flags — upstream `pass_config` flags of the same names stay off on the track. |
+ | `fuse_qknorm_rope` | bool | `True` | Whether to enable fuse_qknorm_rope pass. If Triton is not in the environment, set it to False. |
+ | `fuse_muls_add` | bool | `True` | Whether to enable fuse_muls_add pass.|
++| `vf_fusion_mode` | str \| `None` | `None` | VF Fusion policy forwarded to torch_npu on the inductor track: `"ub-aware-op"` or `"max-parallel"`. `None` keeps the compiler-managed default. The removed `enable_vf_fusion` switch is not exposed because current triton-ascend ignores it. |
+ 
+ **ascend_warmup_config**
+ 
+diff --git a/tests/ut/compilation/test_inductor_track_fusion_chain.py b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+index d3ca5d773..72d1ec225 100644
+--- a/tests/ut/compilation/test_inductor_track_fusion_chain.py
++++ b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+@@ -50,6 +50,7 @@ def _track_vllm_config(
+     fuse_qknorm_rope=None,
+     fuse_muls_add=None,
+     fuse_norm_quant_dynamic=None,
++    vf_fusion_mode=None,
+ ):
+     """带 fuse flags 的轨上 VllmConfig（bare + SimpleNamespace model_config）。
+ 
+@@ -62,6 +63,7 @@ def _track_vllm_config(
+         ("fuse_qknorm_rope", fuse_qknorm_rope),
+         ("fuse_muls_add", fuse_muls_add),
+         ("fuse_norm_quant_dynamic", fuse_norm_quant_dynamic),
++        ("vf_fusion_mode", vf_fusion_mode),
+     ):
+         if v is not None:
+             ascend[k] = v
+@@ -139,6 +141,20 @@ class TestConfigureInjection(FusionChainTestBase):
+         fusion_pass = next(p for p in manager.passes if isinstance(p, AddRMSNormQuantFusionPass))
+         self.assertEqual(fusion_pass._uuid_factors["dyn_fusion"], "True")
+ 
++    def test_vf_fusion_mode_is_forwarded_and_reset(self):
++        from torch_npu._inductor.triton_experimental import config as tn_config
++
++        with patch("vllm_ascend.compilation.ascend_post_grad_pass_manager.enable_sp", return_value=False):
++            self._configure(
++                fuse_norm_quant="false",
++                fuse_qknorm_rope="false",
++                fuse_muls_add="false",
++                vf_fusion_mode="max-parallel",
++            )
++            self.assertEqual(tn_config.vf_fusion_mode, "max-parallel")
++            self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
++            self.assertIsNone(tn_config.vf_fusion_mode)
++
+     def test_all_flags_off_injects_nothing(self):
+         """② 三 flag 显式 False → 无融合 pass 注入（CPU 安全；elide wrapper 不受 flag 门控）。"""
+         from vllm_ascend.compilation.passes.muls_add_pass import MulsAddFusionPass
+@@ -195,6 +211,10 @@ class TestMMRSConfigureInjection(FusionChainTestBase):
+                 "vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass.get_tp_group",
+                 return_value=tp_group,
+             ),
++            patch(
++                "vllm_ascend.models.common.ops.sequence_parallel.get_tensor_model_parallel_world_size",
++                return_value=2,
++            ),
+         ):
+             manager, _ = self._configure(
+                 fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
+diff --git a/vllm_ascend/ascend_config.py b/vllm_ascend/ascend_config.py
+index a01682de1..8c88dd6dc 100644
+--- a/vllm_ascend/ascend_config.py
++++ b/vllm_ascend/ascend_config.py
+@@ -151,6 +151,7 @@ class AscendCompilationConfig:
+     # bit-identical on both tracks (default-off also honors the original
+     # hold-design 3.2 "first version off, enable experiment-driven" promise).
+     fuse_norm_quant_dynamic: bool = False
++    vf_fusion_mode: Literal["ub-aware-op", "max-parallel"] | None = None
+ 
+     @model_validator(mode="before")
+     @classmethod
+diff --git a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+index 969c4a95c..f9a0c81bd 100644
+--- a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
++++ b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+@@ -31,7 +31,7 @@ AddRMSNormQuantFusionPass / QKNormRopeFusionPass / MulsAddFusionPass per
+ GraphFusionPassManager track), MatmulReduceScatterFusionPass under the same
+ SP and hardware checks as the legacy track, plus the torch_npu elide pass
+ wrapped as an InductorPass (U7: VA-side wrapper, uuid folds the TN function's
+-source hash).
++source hash). The torch_npu VF Fusion mode is also forwarded before codegen.
+ """
+ 
+ import inspect
+@@ -249,9 +249,12 @@ class AscendPostGradPassManager(PostGradPassManager):
+         try:
+             from torch_npu._inductor.triton_experimental import config as tn_config
+ 
++            tn_config.vf_fusion_mode = acc.vf_fusion_mode
+             elide_enabled = getattr(tn_config, "elide_int_float_int", False)
+         except Exception:  # noqa: BLE001
+             elide_enabled = False
++            if acc.vf_fusion_mode is not None:
++                logger.warning("torch_npu VF Fusion mode cannot be configured on this installation; skipping it.")
+         if elide_enabled:
+             try:
+                 from torch_npu._inductor.triton_experimental.fx_passes import (
+-- 
+2.34.1
+

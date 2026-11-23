@@ -1,0 +1,145 @@
+From 2c59fe8a99e08df9c27f0f83b4d625ed6ed6cae1 Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 15:01:17 +0000
+Subject: [PATCH] fix(compilation): make MMRS fusion opt-in
+
+---
+ .../configuration/additional_config.md        |  1 +
+ .../test_inductor_track_fusion_chain.py       | 32 +++++++++++++++++--
+ vllm_ascend/ascend_config.py                  |  1 +
+ .../ascend_post_grad_pass_manager.py          | 10 +++---
+ 4 files changed, 37 insertions(+), 7 deletions(-)
+
+diff --git a/docs/source/user_guide/configuration/additional_config.md b/docs/source/user_guide/configuration/additional_config.md
+index 25236ea3e..6830995db 100644
+--- a/docs/source/user_guide/configuration/additional_config.md
++++ b/docs/source/user_guide/configuration/additional_config.md
+@@ -135,6 +135,7 @@ Design / ops (analysis branch): `docs/source/developer_guide/Design_Documents/ru
+ | `fuse_norm_quant`  | bool | `True` | Whether to enable fuse_norm_quant pass. On the inductor track these `fuse_*` flags chain the Ascend fusion passes into the track's post-grad pass manager (same conditions as the legacy track: 310P skips `fuse_norm_quant`/`fuse_muls_add`; W4A4 models skip `fuse_norm_quant`). These are the `ascend_compilation_config` flags — upstream `pass_config` flags of the same names stay off on the track. |
+ | `fuse_qknorm_rope` | bool | `True` | Whether to enable fuse_qknorm_rope pass. If Triton is not in the environment, set it to False. |
+ | `fuse_muls_add` | bool | `True` | Whether to enable fuse_muls_add pass.|
++| `fuse_mm_reduce_scatter` | bool | `False` | Opt-in experimental Matmul+ReduceScatter fusion on the inductor track when SP and hardware support it. Disabled by default because Qwen3.8-27B TP2 measured a latency regression; benchmark the target shapes before enabling. |
+ | `vf_fusion_mode` | str \| `None` | `None` | VF Fusion policy forwarded to torch_npu on the inductor track: `"ub-aware-op"` or `"max-parallel"`. `None` keeps the compiler-managed default. The removed `enable_vf_fusion` switch is not exposed because current triton-ascend ignores it. |
+ 
+ **ascend_warmup_config**
+diff --git a/tests/ut/compilation/test_inductor_track_fusion_chain.py b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+index ac9b8d853..e7adf6ef7 100644
+--- a/tests/ut/compilation/test_inductor_track_fusion_chain.py
++++ b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+@@ -50,6 +50,7 @@ def _track_vllm_config(
+     fuse_norm_quant=None,
+     fuse_qknorm_rope=None,
+     fuse_muls_add=None,
++    fuse_mm_reduce_scatter=None,
+     fuse_norm_quant_dynamic=None,
+     vf_fusion_mode=None,
+ ):
+@@ -63,6 +64,7 @@ def _track_vllm_config(
+         ("fuse_norm_quant", fuse_norm_quant),
+         ("fuse_qknorm_rope", fuse_qknorm_rope),
+         ("fuse_muls_add", fuse_muls_add),
++        ("fuse_mm_reduce_scatter", fuse_mm_reduce_scatter),
+         ("fuse_norm_quant_dynamic", fuse_norm_quant_dynamic),
+         ("vf_fusion_mode", vf_fusion_mode),
+     ):
+@@ -187,6 +189,15 @@ class TestConfigureInjection(FusionChainTestBase):
+ 
+ 
+ class TestMMRSConfigureInjection(FusionChainTestBase):
++    def test_mmrs_is_not_injected_by_default(self):
++        from vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass import (
++            MatmulReduceScatterFusionPass,
++        )
++
++        with patch("vllm_ascend.compilation.ascend_post_grad_pass_manager.enable_sp", return_value=True):
++            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
++        self.assertFalse(any(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes))
++
+     @unittest.skipUnless(_NPU_AVAILABLE, "MMRS pass 实例化需 NPU 和 TP group")
+     def test_sp_and_supported_hardware_injects_mmrs(self):
+         from vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass import (
+@@ -215,7 +226,12 @@ class TestMMRSConfigureInjection(FusionChainTestBase):
+                 return_value=2,
+             ),
+         ):
+-            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
++            manager, _ = self._configure(
++                fuse_norm_quant="false",
++                fuse_qknorm_rope="false",
++                fuse_muls_add="false",
++                fuse_mm_reduce_scatter=True,
++            )
+ 
+         self.assertEqual(sum(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes), 1)
+         profile.supports.assert_called_once_with(HardwareCapability.GRAPH_MM_REDUCE_SCATTER_FUSION)
+@@ -226,7 +242,12 @@ class TestMMRSConfigureInjection(FusionChainTestBase):
+         )
+ 
+         with patch("vllm_ascend.compilation.ascend_post_grad_pass_manager.enable_sp", return_value=False):
+-            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
++            manager, _ = self._configure(
++                fuse_norm_quant="false",
++                fuse_qknorm_rope="false",
++                fuse_muls_add="false",
++                fuse_mm_reduce_scatter=True,
++            )
+         self.assertFalse(any(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes))
+ 
+     def test_unsupported_hardware_does_not_inject_mmrs(self):
+@@ -241,7 +262,12 @@ class TestMMRSConfigureInjection(FusionChainTestBase):
+             patch(f"{module}.enable_sp", return_value=True),
+             patch(f"{module}.get_current_hardware_profile", return_value=profile),
+         ):
+-            manager, _ = self._configure(fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false")
++            manager, _ = self._configure(
++                fuse_norm_quant="false",
++                fuse_qknorm_rope="false",
++                fuse_muls_add="false",
++                fuse_mm_reduce_scatter=True,
++            )
+         self.assertFalse(any(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes))
+ 
+ 
+diff --git a/vllm_ascend/ascend_config.py b/vllm_ascend/ascend_config.py
+index 8c88dd6dc..32098b183 100644
+--- a/vllm_ascend/ascend_config.py
++++ b/vllm_ascend/ascend_config.py
+@@ -142,6 +142,7 @@ class AscendCompilationConfig:
+     fuse_norm_quant: bool = True
+     fuse_qknorm_rope: bool = True
+     fuse_muls_add: bool = True
++    fuse_mm_reduce_scatter: bool = False
+     # stage4 W2 (U-approved 方案 A): opt-in sub-flag of fuse_norm_quant for the
+     # view-swallowing DYNAMIC W8A8 fusion variant. The fused aclnn kernel and
+     # the eager two-op chain are both valid quantizers but not token-identical
+diff --git a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+index c703d5b13..5bcfc47a0 100644
+--- a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
++++ b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+@@ -28,8 +28,8 @@ Since stage3 it also chains the VA-owned Ascend fusion passes back onto the
+ track (stage design/stage3/02 §2): ``configure`` injects
+ AddRMSNormQuantFusionPass / QKNormRopeFusionPass / MulsAddFusionPass per
+ ``ascend_compilation_config.fuse_*`` (default True, aligned with the legacy
+-GraphFusionPassManager track), MatmulReduceScatterFusionPass under the same
+-SP and hardware checks as the legacy track, plus the torch_npu elide pass
++GraphFusionPassManager track), opt-in MatmulReduceScatterFusionPass under the
++legacy SP and hardware checks, plus the torch_npu elide pass
+ wrapped as an InductorPass (U7: VA-side wrapper, uuid folds the TN function's
+ source hash). The torch_npu VF Fusion mode is also forwarded before codegen.
+ """
+@@ -222,8 +222,10 @@ class AscendPostGradPassManager(PostGradPassManager):
+ 
+             self.passes.append(MulsAddFusionPass(config))
+ 
+-        if enable_sp(config) and get_current_hardware_profile().supports(
+-            HardwareCapability.GRAPH_MM_REDUCE_SCATTER_FUSION
++        if (
++            acc.fuse_mm_reduce_scatter
++            and enable_sp(config)
++            and get_current_hardware_profile().supports(HardwareCapability.GRAPH_MM_REDUCE_SCATTER_FUSION)
+         ):
+             from .passes.mm_reduce_scatter_fusion_pass import MatmulReduceScatterFusionPass
+ 
+-- 
+2.34.1
+

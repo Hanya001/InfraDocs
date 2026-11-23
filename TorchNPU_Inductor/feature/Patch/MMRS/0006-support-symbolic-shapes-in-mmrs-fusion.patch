@@ -1,0 +1,137 @@
+From 0f46d8c27b7ce3e637f44d216e3c3bdcba73b12c Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 13:54:14 +0000
+Subject: [PATCH] fix(compilation): support symbolic shapes in MMRS fusion
+
+Signed-off-by: hanyaZ <zhenghanya1@huawei.com>
+---
+ .../test_mm_reduce_scatter_fusion_pass.py     | 16 ++++++++-
+ .../passes/mm_reduce_scatter_fusion_pass.py   | 35 ++++++++++++++++---
+ 2 files changed, 46 insertions(+), 5 deletions(-)
+
+diff --git a/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py b/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py
+index 44eaab8ea..34dcc2c8a 100644
+--- a/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py
++++ b/tests/ut/compilation/test_mm_reduce_scatter_fusion_pass.py
+@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, patch
+ import torch
+ import torch._inductor.pattern_matcher as pm
+ import torch.fx as fx
++from torch._dynamo.source import LocalSource
+ from torch._subclasses.fake_tensor import FakeTensorMode
++from torch.fx.experimental.symbolic_shapes import ShapeEnv
+ from vllm.config import VllmConfig
+ 
+ from tests.ut.base import TestBase
+@@ -55,7 +57,7 @@ ASCEND_SP_REDUCE_SCATTER_OP = torch.ops.vllm.ascend_sp_reduce_scatter_impl.defau
+ PAD_OP = torch.ops.aten.constant_pad_nd.default
+ CAT_OP = torch.ops.aten.cat.default
+ FULL_OP = torch.ops.aten.full.default
+-FUSED_OP = torch.ops.mmrs_test.npu_mm_reduce_scatter_base.default
++FUSED_OP = torch.ops.vllm.npu_mm_reduce_scatter_base.default
+ 
+ 
+ def _build_graph(
+@@ -263,6 +265,18 @@ class TestMatmulReduceScatterFusionPass(TestBase):
+         fused = next(node for node in graph_module.graph.nodes if node.target is FUSED_OP)
+         self.assertEqual(fused.meta["val"].shape, expected)
+ 
++    def test_fake_shape_supports_symbolic_rows(self):
++        fake_mode = FakeTensorMode(shape_env=ShapeEnv())
++        with fake_mode:
++            torch.empty((8, REDUCE_DIM), dtype=torch.bfloat16)
++            rows_expr = fake_mode.shape_env.create_symbol(8, LocalSource("mmrs_rows"))
++            rows = fake_mode.shape_env.create_symintnode(rows_expr, hint=8)
++            x = torch.empty((rows, REDUCE_DIM), dtype=torch.bfloat16)
++            weight_t = torch.empty((REDUCE_DIM, OUTPUT_DIM), dtype=torch.bfloat16)
++            output = torch.ops.vllm.npu_mm_reduce_scatter_base.default(x, weight_t, HCOM_NAME, TP_SIZE)
++        self.assertEqual(output.shape[0], rows // TP_SIZE)
++        self.assertEqual(output.shape[1], OUTPUT_DIM)
++
+     def test_unsupported_patterns_are_not_fused(self):
+         for kwargs in (
+             {"bias": True},
+diff --git a/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py b/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
+index bbbf793ca..59f654ebf 100644
+--- a/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
++++ b/vllm_ascend/compilation/passes/mm_reduce_scatter_fusion_pass.py
+@@ -16,6 +16,7 @@ from vllm.config import VllmConfig
+ from vllm.config.utils import Range
+ from vllm.distributed import get_tensor_model_parallel_world_size, get_tp_group
+ from vllm.logger import logger
++from vllm.utils.torch_utils import direct_register_custom_op
+ 
+ from vllm_ascend.compilation.passes import base_pattern
+ from vllm_ascend.compilation.passes.base_pattern import BasePattern
+@@ -34,6 +35,32 @@ _CAT_OP = torch.ops.aten.cat.default
+ _FULL_OP = torch.ops.aten.full.default
+ 
+ 
++def _npu_mm_reduce_scatter_base(
++    x1: torch.Tensor,
++    x2: torch.Tensor,
++    hcom: str,
++    world_size: int,
++    *,
++    reduce_op: str = "sum",
++) -> torch.Tensor:
++    return DeviceOperator.npu_mm_reduce_scatter_base(x1, x2, hcom, world_size, reduce_op=reduce_op)
++
++
++def _npu_mm_reduce_scatter_base_fake(
++    x1: torch.Tensor, x2: torch.Tensor, hcom: str, world_size: int, *, reduce_op: str = "sum"
++) -> torch.Tensor:
++    return x1.new_empty((x1.shape[0] // world_size, x2.shape[1]))
++
++
++direct_register_custom_op(
++    op_name="npu_mm_reduce_scatter_base",
++    op_func=_npu_mm_reduce_scatter_base,
++    fake_impl=_npu_mm_reduce_scatter_base_fake,
++    mutates_args=[],
++    dispatch_key="PrivateUse1",
++)
++
++
+ def _static_int(value: Any) -> int | None:
+     return value if isinstance(value, int) else None
+ 
+@@ -148,7 +175,7 @@ class MatmulReduceScatterPattern(_MatmulReduceScatterPattern):
+ 
+     def get_replacement(self):
+         def replacement(x: torch.Tensor, weight: torch.Tensor) -> torch.Tensor:
+-            return DeviceOperator.npu_mm_reduce_scatter_base(
++            return torch.ops.vllm.npu_mm_reduce_scatter_base.default(
+                 x, weight.t(), self.hcom_name, self.tp_size, reduce_op="sum"
+             )
+ 
+@@ -167,7 +194,7 @@ class AscendSPMatmulReduceScatterPattern(_MatmulReduceScatterPattern):
+ 
+     def get_replacement(self):
+         def replacement(x: torch.Tensor, weight: torch.Tensor) -> torch.Tensor:
+-            return DeviceOperator.npu_mm_reduce_scatter_base(
++            return torch.ops.vllm.npu_mm_reduce_scatter_base.default(
+                 x, weight.t(), self.hcom_name, self.tp_size, reduce_op="sum"
+             )
+ 
+@@ -236,7 +263,7 @@ class CatPaddedMatmulReduceScatterPattern(_MatmulReduceScatterPattern):
+     def get_replacement(self):
+         def replacement(x: torch.Tensor, weight: torch.Tensor, pad_rows: int) -> torch.Tensor:
+             padded = torch.ops.aten.constant_pad_nd.default(x, [0, 0, 0, pad_rows], 0.0)
+-            return DeviceOperator.npu_mm_reduce_scatter_base(
++            return torch.ops.vllm.npu_mm_reduce_scatter_base.default(
+                 padded, weight.t(), self.hcom_name, self.tp_size, reduce_op="sum"
+             )
+ 
+@@ -286,7 +313,7 @@ class ConstantPaddedMatmulReduceScatterPattern(_MatmulReduceScatterPattern):
+     def get_replacement(self):
+         def replacement(x: torch.Tensor, weight: torch.Tensor, pad_rows: int) -> torch.Tensor:
+             padded = torch.ops.aten.constant_pad_nd.default(x, [0, 0, 0, pad_rows], 0.0)
+-            return DeviceOperator.npu_mm_reduce_scatter_base(
++            return torch.ops.vllm.npu_mm_reduce_scatter_base.default(
+                 padded, weight.t(), self.hcom_name, self.tp_size, reduce_op="sum"
+             )
+ 
+-- 
+2.34.1
+

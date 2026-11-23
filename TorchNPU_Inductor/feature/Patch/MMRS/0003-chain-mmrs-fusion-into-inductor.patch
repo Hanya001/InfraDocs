@@ -1,0 +1,136 @@
+From 96d27159cafd0d162ba9307bc930fc511df6a062 Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 12:59:28 +0000
+Subject: [PATCH] perf(compilation): chain MMRS fusion into Inductor
+
+Signed-off-by: hanyaZ <zhenghanya1@huawei.com>
+---
+ .../test_inductor_track_fusion_chain.py       | 63 ++++++++++++++++++-
+ .../ascend_post_grad_pass_manager.py          | 16 ++++-
+ 2 files changed, 76 insertions(+), 3 deletions(-)
+
+diff --git a/tests/ut/compilation/test_inductor_track_fusion_chain.py b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+index 19f10943f..d3ca5d773 100644
+--- a/tests/ut/compilation/test_inductor_track_fusion_chain.py
++++ b/tests/ut/compilation/test_inductor_track_fusion_chain.py
+@@ -30,7 +30,7 @@ pattern_matcher 全不命中（T0''-2 发现 1）。
+ import importlib
+ import unittest
+ from types import SimpleNamespace
+-from unittest.mock import patch
++from unittest.mock import MagicMock, patch
+ 
+ import torch
+ 
+@@ -171,6 +171,67 @@ class TestConfigureInjection(FusionChainTestBase):
+         self.assertNotIn(MulsAddFusionPass, types)
+ 
+ 
++class TestMMRSConfigureInjection(FusionChainTestBase):
++    @unittest.skipUnless(_NPU_AVAILABLE, "MMRS pass 实例化需 NPU 和 TP group")
++    def test_sp_and_supported_hardware_injects_mmrs(self):
++        from vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass import (
++            MatmulReduceScatterFusionPass,
++        )
++        from vllm_ascend.device.hardware_profile import HardwareCapability
++
++        profile = MagicMock()
++        profile.supports.return_value = True
++        tp_group = MagicMock(unique_name="tp:0")
++        tp_group.device_group._get_backend.return_value.get_hccl_comm_name.return_value = "test_hcom"
++        module = "vllm_ascend.compilation.ascend_post_grad_pass_manager"
++        with (
++            patch(f"{module}.enable_sp", return_value=True),
++            patch(f"{module}.get_current_hardware_profile", return_value=profile),
++            patch(
++                "vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass.get_tensor_model_parallel_world_size",
++                return_value=2,
++            ),
++            patch(
++                "vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass.get_tp_group",
++                return_value=tp_group,
++            ),
++        ):
++            manager, _ = self._configure(
++                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
++            )
++
++        self.assertEqual(sum(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes), 1)
++        profile.supports.assert_called_once_with(HardwareCapability.GRAPH_MM_REDUCE_SCATTER_FUSION)
++
++    def test_non_sp_does_not_inject_mmrs(self):
++        from vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass import (
++            MatmulReduceScatterFusionPass,
++        )
++
++        with patch("vllm_ascend.compilation.ascend_post_grad_pass_manager.enable_sp", return_value=False):
++            manager, _ = self._configure(
++                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
++            )
++        self.assertFalse(any(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes))
++
++    def test_unsupported_hardware_does_not_inject_mmrs(self):
++        from vllm_ascend.compilation.passes.mm_reduce_scatter_fusion_pass import (
++            MatmulReduceScatterFusionPass,
++        )
++
++        profile = MagicMock()
++        profile.supports.return_value = False
++        module = "vllm_ascend.compilation.ascend_post_grad_pass_manager"
++        with (
++            patch(f"{module}.enable_sp", return_value=True),
++            patch(f"{module}.get_current_hardware_profile", return_value=profile),
++        ):
++            manager, _ = self._configure(
++                fuse_norm_quant="false", fuse_qknorm_rope="false", fuse_muls_add="false"
++            )
++        self.assertFalse(any(isinstance(p, MatmulReduceScatterFusionPass) for p in manager.passes))
++
++
+ class TestUuidFactorization(FusionChainTestBase):
+     @unittest.skipUnless(_NPU_AVAILABLE, "pass 实例化需 NPU 示例张量")
+     def test_config_factors_change_uuid(self):
+diff --git a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+index 0b34c7cbe..969c4a95c 100644
+--- a/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
++++ b/vllm_ascend/compilation/ascend_post_grad_pass_manager.py
+@@ -28,8 +28,10 @@ Since stage3 it also chains the VA-owned Ascend fusion passes back onto the
+ track (stage design/stage3/02 §2): ``configure`` injects
+ AddRMSNormQuantFusionPass / QKNormRopeFusionPass / MulsAddFusionPass per
+ ``ascend_compilation_config.fuse_*`` (default True, aligned with the legacy
+-GraphFusionPassManager track), plus the torch_npu elide pass wrapped as an
+-InductorPass (U7: VA-side wrapper, uuid folds the TN function's source hash).
++GraphFusionPassManager track), MatmulReduceScatterFusionPass under the same
++SP and hardware checks as the legacy track, plus the torch_npu elide pass
++wrapped as an InductorPass (U7: VA-side wrapper, uuid folds the TN function's
++source hash).
+ """
+ 
+ import inspect
+@@ -42,6 +44,9 @@ from vllm.compilation.passes.vllm_inductor_pass import VllmInductorPass
+ from vllm.config import VllmConfig
+ from vllm.logger import init_logger
+ 
++from vllm_ascend.device.hardware_profile import HardwareCapability, get_current_hardware_profile
++from vllm_ascend.utils import enable_sp
++
+ logger = init_logger(__name__)
+ 
+ 
+@@ -222,6 +227,13 @@ class AscendPostGradPassManager(PostGradPassManager):
+ 
+             self.passes.append(MulsAddFusionPass(config))
+ 
++        if enable_sp(config) and get_current_hardware_profile().supports(
++            HardwareCapability.GRAPH_MM_REDUCE_SCATTER_FUSION
++        ):
++            from .passes.mm_reduce_scatter_fusion_pass import MatmulReduceScatterFusionPass
++
++            self.passes.append(MatmulReduceScatterFusionPass(config))
++
+         if _required_custom_ops_missing(config):
+             logger.warning(
+                 "Ascend fusion passes are enabled (fuse_norm_quant/fuse_qknorm_rope) but "
+-- 
+2.34.1
+

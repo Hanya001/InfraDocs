@@ -1,0 +1,93 @@
+From 7d17773a5339774fe1ac75412ea6f320decd4be5 Mon Sep 17 00:00:00 2001
+From: hanyaZ <zhenghanya1@huawei.com>
+Date: Sun, 22 Nov 2026 07:44:04 +0000
+Subject: [PATCH] feat(compilation): allow coordinate descent tuning on NPU
+
+Signed-off-by: hanyaZ <zhenghanya1@huawei.com>
+---
+ tests/ut/compilation/test_compile_backend_track.py     | 10 ++++++++++
+ .../compilation/test_inductor_config_normalization.py  | 10 +++++++---
+ vllm_ascend/platform.py                                |  4 ++--
+ 3 files changed, 19 insertions(+), 5 deletions(-)
+
+diff --git a/tests/ut/compilation/test_compile_backend_track.py b/tests/ut/compilation/test_compile_backend_track.py
+index 0e398ab29..71c7d6186 100644
+--- a/tests/ut/compilation/test_compile_backend_track.py
++++ b/tests/ut/compilation/test_compile_backend_track.py
+@@ -332,6 +332,16 @@ class TestSetupInductorTrackEnvs(TrackTestBase):
+         NPUPlatform._setup_inductor_track_envs(vllm_config)
+         self.assertEqual(os.environ["VLLM_ENABLE_INDUCTOR_MAX_AUTOTUNE"], "1")
+ 
++    def test_user_coordinate_descent_1_is_kept(self):
++        from vllm_ascend.platform import NPUPlatform
++
++        os.environ["VLLM_ENABLE_INDUCTOR_COORDINATE_DESCENT_TUNING"] = "1"
++        vllm_config = self._make_stubs()
++        NPUPlatform._setup_inductor_track_envs(vllm_config)
++        self.assertEqual(
++            os.environ["VLLM_ENABLE_INDUCTOR_COORDINATE_DESCENT_TUNING"], "1"
++        )
++
+     def test_user_aot_compile_1_is_kept(self):
+         from vllm_ascend.platform import NPUPlatform
+ 
+diff --git a/tests/ut/compilation/test_inductor_config_normalization.py b/tests/ut/compilation/test_inductor_config_normalization.py
+index 7e7590a7c..10a6de281 100644
+--- a/tests/ut/compilation/test_inductor_config_normalization.py
++++ b/tests/ut/compilation/test_inductor_config_normalization.py
+@@ -6,8 +6,7 @@ Covers (stage design/stage4/02_设计方案.md §三, decisions D3/D4):
+      restores the strict raise
+   2. the correctness-dangerous ``split_reductions`` fails fast with guidance
+   3. track-pinned-off keys (shape_padding / layout_optimization /
+-     coordinate_descent_tuning / combo_kernels / benchmark_combo_kernel)
+-     truthy warn + override False
++     combo_kernels / benchmark_combo_kernel) truthy warn + override False
+   4. ``npu_backend`` is a legal key (path (1) per-compile backend selection)
+ 
+ Config-level only: no NPU device is initialized.
+@@ -40,7 +39,6 @@ _NORM_ENV_VARS = (
+ _PINNED_OFF_KEYS = (
+     "shape_padding",
+     "layout_optimization",
+-    "coordinate_descent_tuning",
+     "combo_kernels",
+     "benchmark_combo_kernel",
+ )
+@@ -190,6 +188,12 @@ class TestDangerousKeys(NormalizationTestBase):
+             result = _normalize_inductor_config(dict(config))
+         self.assertEqual(result, config)
+ 
++    def test_coordinate_descent_tuning_is_preserved(self):
++        from vllm_ascend.platform import _normalize_inductor_config
++
++        config = {"coordinate_descent_tuning": True}
++        self.assertEqual(_normalize_inductor_config(config), config)
++
+ 
+ class TestHookIntegration(NormalizationTestBase):
+     """The late hook wires the normalizer into the track (D3: platform-hook
+diff --git a/vllm_ascend/platform.py b/vllm_ascend/platform.py
+index a1c677fc2..d152b9d84 100644
+--- a/vllm_ascend/platform.py
++++ b/vllm_ascend/platform.py
+@@ -650,7 +650,8 @@ class NPUPlatform(Platform):
+             )
+         os.environ.setdefault("VLLM_USE_MEGA_AOT_ARTIFACT", "0")
+         # vLLM injects max_autotune / coordinate_descent_tuning=True for
+-        # single-size compile ranges; triton_experimental pins them off.
++        # single-size compile ranges; default them off to control compile cost,
++        # while preserving explicit opt-in through the upstream switches.
+         for name in (
+             "VLLM_ENABLE_INDUCTOR_MAX_AUTOTUNE",
+             "VLLM_ENABLE_INDUCTOR_COORDINATE_DESCENT_TUNING",
+@@ -1691,7 +1692,6 @@ def _legal_inductor_config_keys() -> set[str]:
+ _TRACK_PINNED_OFF_INDUCTOR_KEYS = (
+     "shape_padding",
+     "layout_optimization",
+-    "coordinate_descent_tuning",
+ )
+ # Combo kernels have no triton_experimental adaptation and can fail hard;
+ # the early hook already pins them off (see _apply_inductor_track_defaults).
+-- 
+2.34.1
+
