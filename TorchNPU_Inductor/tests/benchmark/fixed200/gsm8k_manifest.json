@@ -1,0 +1,811 @@
+{
+  "task": "gsm8k",
+  "seed": 0,
+  "num_samples": 200,
+  "selection_sha256": "95f449f32337343543c6b8265bd20a9ed3cb1a49cc28a14d7151da5adc998651",
+  "samples": [
+    {
+      "sample_id": "test:1101",
+      "source_row": 1101
+    },
+    {
+      "sample_id": "test:120",
+      "source_row": 120
+    },
+    {
+      "sample_id": "test:474",
+      "source_row": 474
+    },
+    {
+      "sample_id": "test:991",
+      "source_row": 991
+    },
+    {
+      "sample_id": "test:192",
+      "source_row": 192
+    },
+    {
+      "sample_id": "test:1020",
+      "source_row": 1020
+    },
+    {
+      "sample_id": "test:350",
+      "source_row": 350
+    },
+    {
+      "sample_id": "test:480",
+      "source_row": 480
+    },
+    {
+      "sample_id": "test:883",
+      "source_row": 883
+    },
+    {
+      "sample_id": "test:1062",
+      "source_row": 1062
+    },
+    {
+      "sample_id": "test:799",
+      "source_row": 799
+    },
+    {
+      "sample_id": "test:1257",
+      "source_row": 1257
+    },
+    {
+      "sample_id": "test:1070",
+      "source_row": 1070
+    },
+    {
+      "sample_id": "test:1234",
+      "source_row": 1234
+    },
+    {
+      "sample_id": "test:590",
+      "source_row": 590
+    },
+    {
+      "sample_id": "test:446",
+      "source_row": 446
+    },
+    {
+      "sample_id": "test:1302",
+      "source_row": 1302
+    },
+    {
+      "sample_id": "test:265",
+      "source_row": 265
+    },
+    {
+      "sample_id": "test:175",
+      "source_row": 175
+    },
+    {
+      "sample_id": "test:554",
+      "source_row": 554
+    },
+    {
+      "sample_id": "test:1161",
+      "source_row": 1161
+    },
+    {
+      "sample_id": "test:625",
+      "source_row": 625
+    },
+    {
+      "sample_id": "test:605",
+      "source_row": 605
+    },
+    {
+      "sample_id": "test:1110",
+      "source_row": 1110
+    },
+    {
+      "sample_id": "test:204",
+      "source_row": 204
+    },
+    {
+      "sample_id": "test:789",
+      "source_row": 789
+    },
+    {
+      "sample_id": "test:197",
+      "source_row": 197
+    },
+    {
+      "sample_id": "test:1126",
+      "source_row": 1126
+    },
+    {
+      "sample_id": "test:23",
+      "source_row": 23
+    },
+    {
+      "sample_id": "test:1137",
+      "source_row": 1137
+    },
+    {
+      "sample_id": "test:1083",
+      "source_row": 1083
+    },
+    {
+      "sample_id": "test:1052",
+      "source_row": 1052
+    },
+    {
+      "sample_id": "test:952",
+      "source_row": 952
+    },
+    {
+      "sample_id": "test:867",
+      "source_row": 867
+    },
+    {
+      "sample_id": "test:712",
+      "source_row": 712
+    },
+    {
+      "sample_id": "test:950",
+      "source_row": 950
+    },
+    {
+      "sample_id": "test:620",
+      "source_row": 620
+    },
+    {
+      "sample_id": "test:543",
+      "source_row": 543
+    },
+    {
+      "sample_id": "test:934",
+      "source_row": 934
+    },
+    {
+      "sample_id": "test:1226",
+      "source_row": 1226
+    },
+    {
+      "sample_id": "test:399",
+      "source_row": 399
+    },
+    {
+      "sample_id": "test:1048",
+      "source_row": 1048
+    },
+    {
+      "sample_id": "test:680",
+      "source_row": 680
+    },
+    {
+      "sample_id": "test:743",
+      "source_row": 743
+    },
+    {
+      "sample_id": "test:1236",
+      "source_row": 1236
+    },
+    {
+      "sample_id": "test:544",
+      "source_row": 544
+    },
+    {
+      "sample_id": "test:259",
+      "source_row": 259
+    },
+    {
+      "sample_id": "test:957",
+      "source_row": 957
+    },
+    {
+      "sample_id": "test:604",
+      "source_row": 604
+    },
+    {
+      "sample_id": "test:465",
+      "source_row": 465
+    },
+    {
+      "sample_id": "test:1011",
+      "source_row": 1011
+    },
+    {
+      "sample_id": "test:428",
+      "source_row": 428
+    },
+    {
+      "sample_id": "test:76",
+      "source_row": 76
+    },
+    {
+      "sample_id": "test:467",
+      "source_row": 467
+    },
+    {
+      "sample_id": "test:411",
+      "source_row": 411
+    },
+    {
+      "sample_id": "test:217",
+      "source_row": 217
+    },
+    {
+      "sample_id": "test:857",
+      "source_row": 857
+    },
+    {
+      "sample_id": "test:1050",
+      "source_row": 1050
+    },
+    {
+      "sample_id": "test:1035",
+      "source_row": 1035
+    },
+    {
+      "sample_id": "test:294",
+      "source_row": 294
+    },
+    {
+      "sample_id": "test:1167",
+      "source_row": 1167
+    },
+    {
+      "sample_id": "test:611",
+      "source_row": 611
+    },
+    {
+      "sample_id": "test:51",
+      "source_row": 51
+    },
+    {
+      "sample_id": "test:785",
+      "source_row": 785
+    },
+    {
+      "sample_id": "test:445",
+      "source_row": 445
+    },
+    {
+      "sample_id": "test:476",
+      "source_row": 476
+    },
+    {
+      "sample_id": "test:1115",
+      "source_row": 1115
+    },
+    {
+      "sample_id": "test:231",
+      "source_row": 231
+    },
+    {
+      "sample_id": "test:874",
+      "source_row": 874
+    },
+    {
+      "sample_id": "test:550",
+      "source_row": 550
+    },
+    {
+      "sample_id": "test:736",
+      "source_row": 736
+    },
+    {
+      "sample_id": "test:1288",
+      "source_row": 1288
+    },
+    {
+      "sample_id": "test:1130",
+      "source_row": 1130
+    },
+    {
+      "sample_id": "test:420",
+      "source_row": 420
+    },
+    {
+      "sample_id": "test:1274",
+      "source_row": 1274
+    },
+    {
+      "sample_id": "test:487",
+      "source_row": 487
+    },
+    {
+      "sample_id": "test:108",
+      "source_row": 108
+    },
+    {
+      "sample_id": "test:1263",
+      "source_row": 1263
+    },
+    {
+      "sample_id": "test:515",
+      "source_row": 515
+    },
+    {
+      "sample_id": "test:781",
+      "source_row": 781
+    },
+    {
+      "sample_id": "test:763",
+      "source_row": 763
+    },
+    {
+      "sample_id": "test:272",
+      "source_row": 272
+    },
+    {
+      "sample_id": "test:247",
+      "source_row": 247
+    },
+    {
+      "sample_id": "test:1170",
+      "source_row": 1170
+    },
+    {
+      "sample_id": "test:685",
+      "source_row": 685
+    },
+    {
+      "sample_id": "test:1289",
+      "source_row": 1289
+    },
+    {
+      "sample_id": "test:643",
+      "source_row": 643
+    },
+    {
+      "sample_id": "test:1001",
+      "source_row": 1001
+    },
+    {
+      "sample_id": "test:99",
+      "source_row": 99
+    },
+    {
+      "sample_id": "test:423",
+      "source_row": 423
+    },
+    {
+      "sample_id": "test:249",
+      "source_row": 249
+    },
+    {
+      "sample_id": "test:708",
+      "source_row": 708
+    },
+    {
+      "sample_id": "test:945",
+      "source_row": 945
+    },
+    {
+      "sample_id": "test:470",
+      "source_row": 470
+    },
+    {
+      "sample_id": "test:552",
+      "source_row": 552
+    },
+    {
+      "sample_id": "test:545",
+      "source_row": 545
+    },
+    {
+      "sample_id": "test:319",
+      "source_row": 319
+    },
+    {
+      "sample_id": "test:68",
+      "source_row": 68
+    },
+    {
+      "sample_id": "test:521",
+      "source_row": 521
+    },
+    {
+      "sample_id": "test:458",
+      "source_row": 458
+    },
+    {
+      "sample_id": "test:551",
+      "source_row": 551
+    },
+    {
+      "sample_id": "test:557",
+      "source_row": 557
+    },
+    {
+      "sample_id": "test:713",
+      "source_row": 713
+    },
+    {
+      "sample_id": "test:214",
+      "source_row": 214
+    },
+    {
+      "sample_id": "test:808",
+      "source_row": 808
+    },
+    {
+      "sample_id": "test:444",
+      "source_row": 444
+    },
+    {
+      "sample_id": "test:1018",
+      "source_row": 1018
+    },
+    {
+      "sample_id": "test:670",
+      "source_row": 670
+    },
+    {
+      "sample_id": "test:1284",
+      "source_row": 1284
+    },
+    {
+      "sample_id": "test:1211",
+      "source_row": 1211
+    },
+    {
+      "sample_id": "test:1283",
+      "source_row": 1283
+    },
+    {
+      "sample_id": "test:1030",
+      "source_row": 1030
+    },
+    {
+      "sample_id": "test:719",
+      "source_row": 719
+    },
+    {
+      "sample_id": "test:1301",
+      "source_row": 1301
+    },
+    {
+      "sample_id": "test:304",
+      "source_row": 304
+    },
+    {
+      "sample_id": "test:576",
+      "source_row": 576
+    },
+    {
+      "sample_id": "test:1066",
+      "source_row": 1066
+    },
+    {
+      "sample_id": "test:595",
+      "source_row": 595
+    },
+    {
+      "sample_id": "test:84",
+      "source_row": 84
+    },
+    {
+      "sample_id": "test:375",
+      "source_row": 375
+    },
+    {
+      "sample_id": "test:553",
+      "source_row": 553
+    },
+    {
+      "sample_id": "test:628",
+      "source_row": 628
+    },
+    {
+      "sample_id": "test:821",
+      "source_row": 821
+    },
+    {
+      "sample_id": "test:140",
+      "source_row": 140
+    },
+    {
+      "sample_id": "test:866",
+      "source_row": 866
+    },
+    {
+      "sample_id": "test:618",
+      "source_row": 618
+    },
+    {
+      "sample_id": "test:640",
+      "source_row": 640
+    },
+    {
+      "sample_id": "test:518",
+      "source_row": 518
+    },
+    {
+      "sample_id": "test:11",
+      "source_row": 11
+    },
+    {
+      "sample_id": "test:702",
+      "source_row": 702
+    },
+    {
+      "sample_id": "test:174",
+      "source_row": 174
+    },
+    {
+      "sample_id": "test:940",
+      "source_row": 940
+    },
+    {
+      "sample_id": "test:928",
+      "source_row": 928
+    },
+    {
+      "sample_id": "test:706",
+      "source_row": 706
+    },
+    {
+      "sample_id": "test:665",
+      "source_row": 665
+    },
+    {
+      "sample_id": "test:971",
+      "source_row": 971
+    },
+    {
+      "sample_id": "test:1299",
+      "source_row": 1299
+    },
+    {
+      "sample_id": "test:171",
+      "source_row": 171
+    },
+    {
+      "sample_id": "test:835",
+      "source_row": 835
+    },
+    {
+      "sample_id": "test:279",
+      "source_row": 279
+    },
+    {
+      "sample_id": "test:836",
+      "source_row": 836
+    },
+    {
+      "sample_id": "test:882",
+      "source_row": 882
+    },
+    {
+      "sample_id": "test:158",
+      "source_row": 158
+    },
+    {
+      "sample_id": "test:57",
+      "source_row": 57
+    },
+    {
+      "sample_id": "test:1051",
+      "source_row": 1051
+    },
+    {
+      "sample_id": "test:526",
+      "source_row": 526
+    },
+    {
+      "sample_id": "test:292",
+      "source_row": 292
+    },
+    {
+      "sample_id": "test:1082",
+      "source_row": 1082
+    },
+    {
+      "sample_id": "test:1165",
+      "source_row": 1165
+    },
+    {
+      "sample_id": "test:601",
+      "source_row": 601
+    },
+    {
+      "sample_id": "test:840",
+      "source_row": 840
+    },
+    {
+      "sample_id": "test:413",
+      "source_row": 413
+    },
+    {
+      "sample_id": "test:606",
+      "source_row": 606
+    },
+    {
+      "sample_id": "test:81",
+      "source_row": 81
+    },
+    {
+      "sample_id": "test:760",
+      "source_row": 760
+    },
+    {
+      "sample_id": "test:1088",
+      "source_row": 1088
+    },
+    {
+      "sample_id": "test:881",
+      "source_row": 881
+    },
+    {
+      "sample_id": "test:558",
+      "source_row": 558
+    },
+    {
+      "sample_id": "test:572",
+      "source_row": 572
+    },
+    {
+      "sample_id": "test:277",
+      "source_row": 277
+    },
+    {
+      "sample_id": "test:896",
+      "source_row": 896
+    },
+    {
+      "sample_id": "test:921",
+      "source_row": 921
+    },
+    {
+      "sample_id": "test:983",
+      "source_row": 983
+    },
+    {
+      "sample_id": "test:1258",
+      "source_row": 1258
+    },
+    {
+      "sample_id": "test:287",
+      "source_row": 287
+    },
+    {
+      "sample_id": "test:1262",
+      "source_row": 1262
+    },
+    {
+      "sample_id": "test:295",
+      "source_row": 295
+    },
+    {
+      "sample_id": "test:506",
+      "source_row": 506
+    },
+    {
+      "sample_id": "test:630",
+      "source_row": 630
+    },
+    {
+      "sample_id": "test:985",
+      "source_row": 985
+    },
+    {
+      "sample_id": "test:1155",
+      "source_row": 1155
+    },
+    {
+      "sample_id": "test:815",
+      "source_row": 815
+    },
+    {
+      "sample_id": "test:652",
+      "source_row": 652
+    },
+    {
+      "sample_id": "test:134",
+      "source_row": 134
+    },
+    {
+      "sample_id": "test:400",
+      "source_row": 400
+    },
+    {
+      "sample_id": "test:1116",
+      "source_row": 1116
+    },
+    {
+      "sample_id": "test:368",
+      "source_row": 368
+    },
+    {
+      "sample_id": "test:498",
+      "source_row": 498
+    },
+    {
+      "sample_id": "test:409",
+      "source_row": 409
+    },
+    {
+      "sample_id": "test:185",
+      "source_row": 185
+    },
+    {
+      "sample_id": "test:549",
+      "source_row": 549
+    },
+    {
+      "sample_id": "test:757",
+      "source_row": 757
+    },
+    {
+      "sample_id": "test:90",
+      "source_row": 90
+    },
+    {
+      "sample_id": "test:1238",
+      "source_row": 1238
+    },
+    {
+      "sample_id": "test:1245",
+      "source_row": 1245
+    },
+    {
+      "sample_id": "test:1312",
+      "source_row": 1312
+    },
+    {
+      "sample_id": "test:257",
+      "source_row": 257
+    },
+    {
+      "sample_id": "test:496",
+      "source_row": 496
+    },
+    {
+      "sample_id": "test:1272",
+      "source_row": 1272
+    },
+    {
+      "sample_id": "test:453",
+      "source_row": 453
+    },
+    {
+      "sample_id": "test:275",
+      "source_row": 275
+    },
+    {
+      "sample_id": "test:790",
+      "source_row": 790
+    },
+    {
+      "sample_id": "test:967",
+      "source_row": 967
+    },
+    {
+      "sample_id": "test:19",
+      "source_row": 19
+    },
+    {
+      "sample_id": "test:603",
+      "source_row": 603
+    },
+    {
+      "sample_id": "test:711",
+      "source_row": 711
+    },
+    {
+      "sample_id": "test:993",
+      "source_row": 993
+    },
+    {
+      "sample_id": "test:1105",
+      "source_row": 1105
+    },
+    {
+      "sample_id": "test:755",
+      "source_row": 755
+    },
+    {
+      "sample_id": "test:1071",
+      "source_row": 1071
+    }
+  ],
+  "source_files": {
+    "test.jsonl": "3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14"
+  }
+}

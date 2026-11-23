@@ -1,0 +1,5067 @@
+{
+  "task": "mmlu",
+  "seed": 0,
+  "num_samples": 1000,
+  "selection_sha256": "f7ee45c7bc9d4db4e1590eee682a8d5a1ca41cfcf4c9e27691dc6ffd6bbcbb10",
+  "samples": [
+    {
+      "sample_id": "abstract_algebra:96",
+      "subject": "abstract_algebra",
+      "source_row": 96
+    },
+    {
+      "sample_id": "anatomy:50",
+      "subject": "anatomy",
+      "source_row": 50
+    },
+    {
+      "sample_id": "astronomy:137",
+      "subject": "astronomy",
+      "source_row": 137
+    },
+    {
+      "sample_id": "business_ethics:33",
+      "subject": "business_ethics",
+      "source_row": 33
+    },
+    {
+      "sample_id": "clinical_knowledge:180",
+      "subject": "clinical_knowledge",
+      "source_row": 180
+    },
+    {
+      "sample_id": "college_biology:127",
+      "subject": "college_biology",
+      "source_row": 127
+    },
+    {
+      "sample_id": "college_chemistry:11",
+      "subject": "college_chemistry",
+      "source_row": 11
+    },
+    {
+      "sample_id": "college_computer_science:44",
+      "subject": "college_computer_science",
+      "source_row": 44
+    },
+    {
+      "sample_id": "college_mathematics:15",
+      "subject": "college_mathematics",
+      "source_row": 15
+    },
+    {
+      "sample_id": "college_medicine:99",
+      "subject": "college_medicine",
+      "source_row": 99
+    },
+    {
+      "sample_id": "college_physics:95",
+      "subject": "college_physics",
+      "source_row": 95
+    },
+    {
+      "sample_id": "computer_security:14",
+      "subject": "computer_security",
+      "source_row": 14
+    },
+    {
+      "sample_id": "conceptual_physics:152",
+      "subject": "conceptual_physics",
+      "source_row": 152
+    },
+    {
+      "sample_id": "econometrics:42",
+      "subject": "econometrics",
+      "source_row": 42
+    },
+    {
+      "sample_id": "electrical_engineering:111",
+      "subject": "electrical_engineering",
+      "source_row": 111
+    },
+    {
+      "sample_id": "elementary_mathematics:319",
+      "subject": "elementary_mathematics",
+      "source_row": 319
+    },
+    {
+      "sample_id": "formal_logic:12",
+      "subject": "formal_logic",
+      "source_row": 12
+    },
+    {
+      "sample_id": "global_facts:23",
+      "subject": "global_facts",
+      "source_row": 23
+    },
+    {
+      "sample_id": "high_school_biology:250",
+      "subject": "high_school_biology",
+      "source_row": 250
+    },
+    {
+      "sample_id": "high_school_chemistry:4",
+      "subject": "high_school_chemistry",
+      "source_row": 4
+    },
+    {
+      "sample_id": "high_school_computer_science:61",
+      "subject": "high_school_computer_science",
+      "source_row": 61
+    },
+    {
+      "sample_id": "high_school_european_history:53",
+      "subject": "high_school_european_history",
+      "source_row": 53
+    },
+    {
+      "sample_id": "high_school_geography:41",
+      "subject": "high_school_geography",
+      "source_row": 41
+    },
+    {
+      "sample_id": "high_school_government_and_politics:75",
+      "subject": "high_school_government_and_politics",
+      "source_row": 75
+    },
+    {
+      "sample_id": "high_school_macroeconomics:286",
+      "subject": "high_school_macroeconomics",
+      "source_row": 286
+    },
+    {
+      "sample_id": "high_school_mathematics:265",
+      "subject": "high_school_mathematics",
+      "source_row": 265
+    },
+    {
+      "sample_id": "high_school_microeconomics:80",
+      "subject": "high_school_microeconomics",
+      "source_row": 80
+    },
+    {
+      "sample_id": "high_school_physics:0",
+      "subject": "high_school_physics",
+      "source_row": 0
+    },
+    {
+      "sample_id": "high_school_psychology:489",
+      "subject": "high_school_psychology",
+      "source_row": 489
+    },
+    {
+      "sample_id": "high_school_statistics:33",
+      "subject": "high_school_statistics",
+      "source_row": 33
+    },
+    {
+      "sample_id": "high_school_us_history:64",
+      "subject": "high_school_us_history",
+      "source_row": 64
+    },
+    {
+      "sample_id": "high_school_world_history:169",
+      "subject": "high_school_world_history",
+      "source_row": 169
+    },
+    {
+      "sample_id": "human_aging:209",
+      "subject": "human_aging",
+      "source_row": 209
+    },
+    {
+      "sample_id": "human_sexuality:43",
+      "subject": "human_sexuality",
+      "source_row": 43
+    },
+    {
+      "sample_id": "international_law:34",
+      "subject": "international_law",
+      "source_row": 34
+    },
+    {
+      "sample_id": "jurisprudence:43",
+      "subject": "jurisprudence",
+      "source_row": 43
+    },
+    {
+      "sample_id": "logical_fallacies:61",
+      "subject": "logical_fallacies",
+      "source_row": 61
+    },
+    {
+      "sample_id": "machine_learning:82",
+      "subject": "machine_learning",
+      "source_row": 82
+    },
+    {
+      "sample_id": "management:63",
+      "subject": "management",
+      "source_row": 63
+    },
+    {
+      "sample_id": "marketing:78",
+      "subject": "marketing",
+      "source_row": 78
+    },
+    {
+      "sample_id": "medical_genetics:97",
+      "subject": "medical_genetics",
+      "source_row": 97
+    },
+    {
+      "sample_id": "miscellaneous:757",
+      "subject": "miscellaneous",
+      "source_row": 757
+    },
+    {
+      "sample_id": "moral_disputes:140",
+      "subject": "moral_disputes",
+      "source_row": 140
+    },
+    {
+      "sample_id": "moral_scenarios:7",
+      "subject": "moral_scenarios",
+      "source_row": 7
+    },
+    {
+      "sample_id": "nutrition:135",
+      "subject": "nutrition",
+      "source_row": 135
+    },
+    {
+      "sample_id": "philosophy:304",
+      "subject": "philosophy",
+      "source_row": 304
+    },
+    {
+      "sample_id": "prehistory:138",
+      "subject": "prehistory",
+      "source_row": 138
+    },
+    {
+      "sample_id": "professional_accounting:56",
+      "subject": "professional_accounting",
+      "source_row": 56
+    },
+    {
+      "sample_id": "professional_law:1189",
+      "subject": "professional_law",
+      "source_row": 1189
+    },
+    {
+      "sample_id": "professional_medicine:218",
+      "subject": "professional_medicine",
+      "source_row": 218
+    },
+    {
+      "sample_id": "professional_psychology:170",
+      "subject": "professional_psychology",
+      "source_row": 170
+    },
+    {
+      "sample_id": "public_relations:71",
+      "subject": "public_relations",
+      "source_row": 71
+    },
+    {
+      "sample_id": "security_studies:52",
+      "subject": "security_studies",
+      "source_row": 52
+    },
+    {
+      "sample_id": "sociology:108",
+      "subject": "sociology",
+      "source_row": 108
+    },
+    {
+      "sample_id": "us_foreign_policy:95",
+      "subject": "us_foreign_policy",
+      "source_row": 95
+    },
+    {
+      "sample_id": "virology:49",
+      "subject": "virology",
+      "source_row": 49
+    },
+    {
+      "sample_id": "world_religions:36",
+      "subject": "world_religions",
+      "source_row": 36
+    },
+    {
+      "sample_id": "abstract_algebra:50",
+      "subject": "abstract_algebra",
+      "source_row": 50
+    },
+    {
+      "sample_id": "anatomy:104",
+      "subject": "anatomy",
+      "source_row": 104
+    },
+    {
+      "sample_id": "astronomy:140",
+      "subject": "astronomy",
+      "source_row": 140
+    },
+    {
+      "sample_id": "business_ethics:14",
+      "subject": "business_ethics",
+      "source_row": 14
+    },
+    {
+      "sample_id": "clinical_knowledge:79",
+      "subject": "clinical_knowledge",
+      "source_row": 79
+    },
+    {
+      "sample_id": "college_biology:112",
+      "subject": "college_biology",
+      "source_row": 112
+    },
+    {
+      "sample_id": "college_chemistry:36",
+      "subject": "college_chemistry",
+      "source_row": 36
+    },
+    {
+      "sample_id": "college_computer_science:60",
+      "subject": "college_computer_science",
+      "source_row": 60
+    },
+    {
+      "sample_id": "college_mathematics:41",
+      "subject": "college_mathematics",
+      "source_row": 41
+    },
+    {
+      "sample_id": "college_medicine:133",
+      "subject": "college_medicine",
+      "source_row": 133
+    },
+    {
+      "sample_id": "college_physics:50",
+      "subject": "college_physics",
+      "source_row": 50
+    },
+    {
+      "sample_id": "computer_security:31",
+      "subject": "computer_security",
+      "source_row": 31
+    },
+    {
+      "sample_id": "conceptual_physics:156",
+      "subject": "conceptual_physics",
+      "source_row": 156
+    },
+    {
+      "sample_id": "econometrics:60",
+      "subject": "econometrics",
+      "source_row": 60
+    },
+    {
+      "sample_id": "electrical_engineering:126",
+      "subject": "electrical_engineering",
+      "source_row": 126
+    },
+    {
+      "sample_id": "elementary_mathematics:38",
+      "subject": "elementary_mathematics",
+      "source_row": 38
+    },
+    {
+      "sample_id": "formal_logic:108",
+      "subject": "formal_logic",
+      "source_row": 108
+    },
+    {
+      "sample_id": "global_facts:47",
+      "subject": "global_facts",
+      "source_row": 47
+    },
+    {
+      "sample_id": "high_school_biology:273",
+      "subject": "high_school_biology",
+      "source_row": 273
+    },
+    {
+      "sample_id": "high_school_chemistry:187",
+      "subject": "high_school_chemistry",
+      "source_row": 187
+    },
+    {
+      "sample_id": "high_school_computer_science:82",
+      "subject": "high_school_computer_science",
+      "source_row": 82
+    },
+    {
+      "sample_id": "high_school_european_history:12",
+      "subject": "high_school_european_history",
+      "source_row": 12
+    },
+    {
+      "sample_id": "high_school_geography:56",
+      "subject": "high_school_geography",
+      "source_row": 56
+    },
+    {
+      "sample_id": "high_school_government_and_politics:178",
+      "subject": "high_school_government_and_politics",
+      "source_row": 178
+    },
+    {
+      "sample_id": "high_school_macroeconomics:116",
+      "subject": "high_school_macroeconomics",
+      "source_row": 116
+    },
+    {
+      "sample_id": "high_school_mathematics:145",
+      "subject": "high_school_mathematics",
+      "source_row": 145
+    },
+    {
+      "sample_id": "high_school_microeconomics:35",
+      "subject": "high_school_microeconomics",
+      "source_row": 35
+    },
+    {
+      "sample_id": "high_school_physics:68",
+      "subject": "high_school_physics",
+      "source_row": 68
+    },
+    {
+      "sample_id": "high_school_psychology:158",
+      "subject": "high_school_psychology",
+      "source_row": 158
+    },
+    {
+      "sample_id": "high_school_statistics:114",
+      "subject": "high_school_statistics",
+      "source_row": 114
+    },
+    {
+      "sample_id": "high_school_us_history:62",
+      "subject": "high_school_us_history",
+      "source_row": 62
+    },
+    {
+      "sample_id": "high_school_world_history:12",
+      "subject": "high_school_world_history",
+      "source_row": 12
+    },
+    {
+      "sample_id": "human_aging:37",
+      "subject": "human_aging",
+      "source_row": 37
+    },
+    {
+      "sample_id": "human_sexuality:67",
+      "subject": "human_sexuality",
+      "source_row": 67
+    },
+    {
+      "sample_id": "international_law:10",
+      "subject": "international_law",
+      "source_row": 10
+    },
+    {
+      "sample_id": "jurisprudence:50",
+      "subject": "jurisprudence",
+      "source_row": 50
+    },
+    {
+      "sample_id": "logical_fallacies:2",
+      "subject": "logical_fallacies",
+      "source_row": 2
+    },
+    {
+      "sample_id": "machine_learning:58",
+      "subject": "machine_learning",
+      "source_row": 58
+    },
+    {
+      "sample_id": "management:2",
+      "subject": "management",
+      "source_row": 2
+    },
+    {
+      "sample_id": "marketing:31",
+      "subject": "marketing",
+      "source_row": 31
+    },
+    {
+      "sample_id": "medical_genetics:6",
+      "subject": "medical_genetics",
+      "source_row": 6
+    },
+    {
+      "sample_id": "miscellaneous:195",
+      "subject": "miscellaneous",
+      "source_row": 195
+    },
+    {
+      "sample_id": "moral_disputes:254",
+      "subject": "moral_disputes",
+      "source_row": 254
+    },
+    {
+      "sample_id": "moral_scenarios:580",
+      "subject": "moral_scenarios",
+      "source_row": 580
+    },
+    {
+      "sample_id": "nutrition:205",
+      "subject": "nutrition",
+      "source_row": 205
+    },
+    {
+      "sample_id": "philosophy:45",
+      "subject": "philosophy",
+      "source_row": 45
+    },
+    {
+      "sample_id": "prehistory:58",
+      "subject": "prehistory",
+      "source_row": 58
+    },
+    {
+      "sample_id": "professional_accounting:37",
+      "subject": "professional_accounting",
+      "source_row": 37
+    },
+    {
+      "sample_id": "professional_law:713",
+      "subject": "professional_law",
+      "source_row": 713
+    },
+    {
+      "sample_id": "professional_medicine:61",
+      "subject": "professional_medicine",
+      "source_row": 61
+    },
+    {
+      "sample_id": "professional_psychology:10",
+      "subject": "professional_psychology",
+      "source_row": 10
+    },
+    {
+      "sample_id": "public_relations:85",
+      "subject": "public_relations",
+      "source_row": 85
+    },
+    {
+      "sample_id": "security_studies:147",
+      "subject": "security_studies",
+      "source_row": 147
+    },
+    {
+      "sample_id": "sociology:104",
+      "subject": "sociology",
+      "source_row": 104
+    },
+    {
+      "sample_id": "us_foreign_policy:23",
+      "subject": "us_foreign_policy",
+      "source_row": 23
+    },
+    {
+      "sample_id": "virology:113",
+      "subject": "virology",
+      "source_row": 113
+    },
+    {
+      "sample_id": "world_religions:43",
+      "subject": "world_religions",
+      "source_row": 43
+    },
+    {
+      "sample_id": "abstract_algebra:87",
+      "subject": "abstract_algebra",
+      "source_row": 87
+    },
+    {
+      "sample_id": "anatomy:14",
+      "subject": "anatomy",
+      "source_row": 14
+    },
+    {
+      "sample_id": "astronomy:90",
+      "subject": "astronomy",
+      "source_row": 90
+    },
+    {
+      "sample_id": "business_ethics:26",
+      "subject": "business_ethics",
+      "source_row": 26
+    },
+    {
+      "sample_id": "clinical_knowledge:258",
+      "subject": "clinical_knowledge",
+      "source_row": 258
+    },
+    {
+      "sample_id": "college_biology:104",
+      "subject": "college_biology",
+      "source_row": 104
+    },
+    {
+      "sample_id": "college_chemistry:83",
+      "subject": "college_chemistry",
+      "source_row": 83
+    },
+    {
+      "sample_id": "college_computer_science:62",
+      "subject": "college_computer_science",
+      "source_row": 62
+    },
+    {
+      "sample_id": "college_mathematics:4",
+      "subject": "college_mathematics",
+      "source_row": 4
+    },
+    {
+      "sample_id": "college_medicine:43",
+      "subject": "college_medicine",
+      "source_row": 43
+    },
+    {
+      "sample_id": "college_physics:78",
+      "subject": "college_physics",
+      "source_row": 78
+    },
+    {
+      "sample_id": "computer_security:71",
+      "subject": "computer_security",
+      "source_row": 71
+    },
+    {
+      "sample_id": "conceptual_physics:22",
+      "subject": "conceptual_physics",
+      "source_row": 22
+    },
+    {
+      "sample_id": "econometrics:41",
+      "subject": "econometrics",
+      "source_row": 41
+    },
+    {
+      "sample_id": "electrical_engineering:78",
+      "subject": "electrical_engineering",
+      "source_row": 78
+    },
+    {
+      "sample_id": "elementary_mathematics:305",
+      "subject": "elementary_mathematics",
+      "source_row": 305
+    },
+    {
+      "sample_id": "formal_logic:20",
+      "subject": "formal_logic",
+      "source_row": 20
+    },
+    {
+      "sample_id": "global_facts:76",
+      "subject": "global_facts",
+      "source_row": 76
+    },
+    {
+      "sample_id": "high_school_biology:15",
+      "subject": "high_school_biology",
+      "source_row": 15
+    },
+    {
+      "sample_id": "high_school_chemistry:127",
+      "subject": "high_school_chemistry",
+      "source_row": 127
+    },
+    {
+      "sample_id": "high_school_computer_science:79",
+      "subject": "high_school_computer_science",
+      "source_row": 79
+    },
+    {
+      "sample_id": "high_school_european_history:144",
+      "subject": "high_school_european_history",
+      "source_row": 144
+    },
+    {
+      "sample_id": "high_school_geography:110",
+      "subject": "high_school_geography",
+      "source_row": 110
+    },
+    {
+      "sample_id": "high_school_government_and_politics:77",
+      "subject": "high_school_government_and_politics",
+      "source_row": 77
+    },
+    {
+      "sample_id": "high_school_macroeconomics:342",
+      "subject": "high_school_macroeconomics",
+      "source_row": 342
+    },
+    {
+      "sample_id": "high_school_mathematics:47",
+      "subject": "high_school_mathematics",
+      "source_row": 47
+    },
+    {
+      "sample_id": "high_school_microeconomics:64",
+      "subject": "high_school_microeconomics",
+      "source_row": 64
+    },
+    {
+      "sample_id": "high_school_physics:149",
+      "subject": "high_school_physics",
+      "source_row": 149
+    },
+    {
+      "sample_id": "high_school_psychology:220",
+      "subject": "high_school_psychology",
+      "source_row": 220
+    },
+    {
+      "sample_id": "high_school_statistics:164",
+      "subject": "high_school_statistics",
+      "source_row": 164
+    },
+    {
+      "sample_id": "high_school_us_history:143",
+      "subject": "high_school_us_history",
+      "source_row": 143
+    },
+    {
+      "sample_id": "high_school_world_history:142",
+      "subject": "high_school_world_history",
+      "source_row": 142
+    },
+    {
+      "sample_id": "human_aging:87",
+      "subject": "human_aging",
+      "source_row": 87
+    },
+    {
+      "sample_id": "human_sexuality:102",
+      "subject": "human_sexuality",
+      "source_row": 102
+    },
+    {
+      "sample_id": "international_law:52",
+      "subject": "international_law",
+      "source_row": 52
+    },
+    {
+      "sample_id": "jurisprudence:28",
+      "subject": "jurisprudence",
+      "source_row": 28
+    },
+    {
+      "sample_id": "logical_fallacies:31",
+      "subject": "logical_fallacies",
+      "source_row": 31
+    },
+    {
+      "sample_id": "machine_learning:106",
+      "subject": "machine_learning",
+      "source_row": 106
+    },
+    {
+      "sample_id": "management:55",
+      "subject": "management",
+      "source_row": 55
+    },
+    {
+      "sample_id": "marketing:76",
+      "subject": "marketing",
+      "source_row": 76
+    },
+    {
+      "sample_id": "medical_genetics:23",
+      "subject": "medical_genetics",
+      "source_row": 23
+    },
+    {
+      "sample_id": "miscellaneous:758",
+      "subject": "miscellaneous",
+      "source_row": 758
+    },
+    {
+      "sample_id": "moral_disputes:323",
+      "subject": "moral_disputes",
+      "source_row": 323
+    },
+    {
+      "sample_id": "moral_scenarios:201",
+      "subject": "moral_scenarios",
+      "source_row": 201
+    },
+    {
+      "sample_id": "nutrition:214",
+      "subject": "nutrition",
+      "source_row": 214
+    },
+    {
+      "sample_id": "philosophy:15",
+      "subject": "philosophy",
+      "source_row": 15
+    },
+    {
+      "sample_id": "prehistory:323",
+      "subject": "prehistory",
+      "source_row": 323
+    },
+    {
+      "sample_id": "professional_accounting:81",
+      "subject": "professional_accounting",
+      "source_row": 81
+    },
+    {
+      "sample_id": "professional_law:1188",
+      "subject": "professional_law",
+      "source_row": 1188
+    },
+    {
+      "sample_id": "professional_medicine:161",
+      "subject": "professional_medicine",
+      "source_row": 161
+    },
+    {
+      "sample_id": "professional_psychology:431",
+      "subject": "professional_psychology",
+      "source_row": 431
+    },
+    {
+      "sample_id": "public_relations:53",
+      "subject": "public_relations",
+      "source_row": 53
+    },
+    {
+      "sample_id": "security_studies:75",
+      "subject": "security_studies",
+      "source_row": 75
+    },
+    {
+      "sample_id": "sociology:166",
+      "subject": "sociology",
+      "source_row": 166
+    },
+    {
+      "sample_id": "us_foreign_policy:68",
+      "subject": "us_foreign_policy",
+      "source_row": 68
+    },
+    {
+      "sample_id": "virology:50",
+      "subject": "virology",
+      "source_row": 50
+    },
+    {
+      "sample_id": "world_religions:22",
+      "subject": "world_religions",
+      "source_row": 22
+    },
+    {
+      "sample_id": "abstract_algebra:11",
+      "subject": "abstract_algebra",
+      "source_row": 11
+    },
+    {
+      "sample_id": "anatomy:81",
+      "subject": "anatomy",
+      "source_row": 81
+    },
+    {
+      "sample_id": "astronomy:111",
+      "subject": "astronomy",
+      "source_row": 111
+    },
+    {
+      "sample_id": "business_ethics:24",
+      "subject": "business_ethics",
+      "source_row": 24
+    },
+    {
+      "sample_id": "clinical_knowledge:59",
+      "subject": "clinical_knowledge",
+      "source_row": 59
+    },
+    {
+      "sample_id": "college_biology:52",
+      "subject": "college_biology",
+      "source_row": 52
+    },
+    {
+      "sample_id": "college_chemistry:0",
+      "subject": "college_chemistry",
+      "source_row": 0
+    },
+    {
+      "sample_id": "college_computer_science:39",
+      "subject": "college_computer_science",
+      "source_row": 39
+    },
+    {
+      "sample_id": "college_mathematics:21",
+      "subject": "college_mathematics",
+      "source_row": 21
+    },
+    {
+      "sample_id": "college_medicine:157",
+      "subject": "college_medicine",
+      "source_row": 157
+    },
+    {
+      "sample_id": "college_physics:71",
+      "subject": "college_physics",
+      "source_row": 71
+    },
+    {
+      "sample_id": "computer_security:40",
+      "subject": "computer_security",
+      "source_row": 40
+    },
+    {
+      "sample_id": "conceptual_physics:233",
+      "subject": "conceptual_physics",
+      "source_row": 233
+    },
+    {
+      "sample_id": "econometrics:97",
+      "subject": "econometrics",
+      "source_row": 97
+    },
+    {
+      "sample_id": "electrical_engineering:31",
+      "subject": "electrical_engineering",
+      "source_row": 31
+    },
+    {
+      "sample_id": "elementary_mathematics:60",
+      "subject": "elementary_mathematics",
+      "source_row": 60
+    },
+    {
+      "sample_id": "formal_logic:118",
+      "subject": "formal_logic",
+      "source_row": 118
+    },
+    {
+      "sample_id": "global_facts:75",
+      "subject": "global_facts",
+      "source_row": 75
+    },
+    {
+      "sample_id": "high_school_biology:275",
+      "subject": "high_school_biology",
+      "source_row": 275
+    },
+    {
+      "sample_id": "high_school_chemistry:74",
+      "subject": "high_school_chemistry",
+      "source_row": 74
+    },
+    {
+      "sample_id": "high_school_computer_science:21",
+      "subject": "high_school_computer_science",
+      "source_row": 21
+    },
+    {
+      "sample_id": "high_school_european_history:10",
+      "subject": "high_school_european_history",
+      "source_row": 10
+    },
+    {
+      "sample_id": "high_school_geography:109",
+      "subject": "high_school_geography",
+      "source_row": 109
+    },
+    {
+      "sample_id": "high_school_government_and_politics:82",
+      "subject": "high_school_government_and_politics",
+      "source_row": 82
+    },
+    {
+      "sample_id": "high_school_macroeconomics:353",
+      "subject": "high_school_macroeconomics",
+      "source_row": 353
+    },
+    {
+      "sample_id": "high_school_mathematics:264",
+      "subject": "high_school_mathematics",
+      "source_row": 264
+    },
+    {
+      "sample_id": "high_school_microeconomics:124",
+      "subject": "high_school_microeconomics",
+      "source_row": 124
+    },
+    {
+      "sample_id": "high_school_physics:31",
+      "subject": "high_school_physics",
+      "source_row": 31
+    },
+    {
+      "sample_id": "high_school_psychology:356",
+      "subject": "high_school_psychology",
+      "source_row": 356
+    },
+    {
+      "sample_id": "high_school_statistics:21",
+      "subject": "high_school_statistics",
+      "source_row": 21
+    },
+    {
+      "sample_id": "high_school_us_history:82",
+      "subject": "high_school_us_history",
+      "source_row": 82
+    },
+    {
+      "sample_id": "high_school_world_history:5",
+      "subject": "high_school_world_history",
+      "source_row": 5
+    },
+    {
+      "sample_id": "human_aging:211",
+      "subject": "human_aging",
+      "source_row": 211
+    },
+    {
+      "sample_id": "human_sexuality:87",
+      "subject": "human_sexuality",
+      "source_row": 87
+    },
+    {
+      "sample_id": "international_law:24",
+      "subject": "international_law",
+      "source_row": 24
+    },
+    {
+      "sample_id": "jurisprudence:102",
+      "subject": "jurisprudence",
+      "source_row": 102
+    },
+    {
+      "sample_id": "logical_fallacies:133",
+      "subject": "logical_fallacies",
+      "source_row": 133
+    },
+    {
+      "sample_id": "machine_learning:45",
+      "subject": "machine_learning",
+      "source_row": 45
+    },
+    {
+      "sample_id": "management:30",
+      "subject": "management",
+      "source_row": 30
+    },
+    {
+      "sample_id": "marketing:171",
+      "subject": "marketing",
+      "source_row": 171
+    },
+    {
+      "sample_id": "medical_genetics:54",
+      "subject": "medical_genetics",
+      "source_row": 54
+    },
+    {
+      "sample_id": "miscellaneous:372",
+      "subject": "miscellaneous",
+      "source_row": 372
+    },
+    {
+      "sample_id": "moral_disputes:190",
+      "subject": "moral_disputes",
+      "source_row": 190
+    },
+    {
+      "sample_id": "moral_scenarios:453",
+      "subject": "moral_scenarios",
+      "source_row": 453
+    },
+    {
+      "sample_id": "nutrition:254",
+      "subject": "nutrition",
+      "source_row": 254
+    },
+    {
+      "sample_id": "philosophy:48",
+      "subject": "philosophy",
+      "source_row": 48
+    },
+    {
+      "sample_id": "prehistory:166",
+      "subject": "prehistory",
+      "source_row": 166
+    },
+    {
+      "sample_id": "professional_accounting:259",
+      "subject": "professional_accounting",
+      "source_row": 259
+    },
+    {
+      "sample_id": "professional_law:1499",
+      "subject": "professional_law",
+      "source_row": 1499
+    },
+    {
+      "sample_id": "professional_medicine:171",
+      "subject": "professional_medicine",
+      "source_row": 171
+    },
+    {
+      "sample_id": "professional_psychology:334",
+      "subject": "professional_psychology",
+      "source_row": 334
+    },
+    {
+      "sample_id": "public_relations:59",
+      "subject": "public_relations",
+      "source_row": 59
+    },
+    {
+      "sample_id": "security_studies:45",
+      "subject": "security_studies",
+      "source_row": 45
+    },
+    {
+      "sample_id": "sociology:70",
+      "subject": "sociology",
+      "source_row": 70
+    },
+    {
+      "sample_id": "us_foreign_policy:98",
+      "subject": "us_foreign_policy",
+      "source_row": 98
+    },
+    {
+      "sample_id": "virology:99",
+      "subject": "virology",
+      "source_row": 99
+    },
+    {
+      "sample_id": "world_religions:129",
+      "subject": "world_religions",
+      "source_row": 129
+    },
+    {
+      "sample_id": "abstract_algebra:79",
+      "subject": "abstract_algebra",
+      "source_row": 79
+    },
+    {
+      "sample_id": "anatomy:38",
+      "subject": "anatomy",
+      "source_row": 38
+    },
+    {
+      "sample_id": "astronomy:6",
+      "subject": "astronomy",
+      "source_row": 6
+    },
+    {
+      "sample_id": "business_ethics:3",
+      "subject": "business_ethics",
+      "source_row": 3
+    },
+    {
+      "sample_id": "clinical_knowledge:72",
+      "subject": "clinical_knowledge",
+      "source_row": 72
+    },
+    {
+      "sample_id": "college_biology:118",
+      "subject": "college_biology",
+      "source_row": 118
+    },
+    {
+      "sample_id": "college_chemistry:34",
+      "subject": "college_chemistry",
+      "source_row": 34
+    },
+    {
+      "sample_id": "college_computer_science:28",
+      "subject": "college_computer_science",
+      "source_row": 28
+    },
+    {
+      "sample_id": "college_mathematics:63",
+      "subject": "college_mathematics",
+      "source_row": 63
+    },
+    {
+      "sample_id": "college_medicine:40",
+      "subject": "college_medicine",
+      "source_row": 40
+    },
+    {
+      "sample_id": "college_physics:14",
+      "subject": "college_physics",
+      "source_row": 14
+    },
+    {
+      "sample_id": "computer_security:34",
+      "subject": "computer_security",
+      "source_row": 34
+    },
+    {
+      "sample_id": "conceptual_physics:120",
+      "subject": "conceptual_physics",
+      "source_row": 120
+    },
+    {
+      "sample_id": "econometrics:100",
+      "subject": "econometrics",
+      "source_row": 100
+    },
+    {
+      "sample_id": "electrical_engineering:62",
+      "subject": "electrical_engineering",
+      "source_row": 62
+    },
+    {
+      "sample_id": "elementary_mathematics:116",
+      "subject": "elementary_mathematics",
+      "source_row": 116
+    },
+    {
+      "sample_id": "formal_logic:37",
+      "subject": "formal_logic",
+      "source_row": 37
+    },
+    {
+      "sample_id": "global_facts:51",
+      "subject": "global_facts",
+      "source_row": 51
+    },
+    {
+      "sample_id": "high_school_biology:160",
+      "subject": "high_school_biology",
+      "source_row": 160
+    },
+    {
+      "sample_id": "high_school_chemistry:7",
+      "subject": "high_school_chemistry",
+      "source_row": 7
+    },
+    {
+      "sample_id": "high_school_computer_science:16",
+      "subject": "high_school_computer_science",
+      "source_row": 16
+    },
+    {
+      "sample_id": "high_school_european_history:15",
+      "subject": "high_school_european_history",
+      "source_row": 15
+    },
+    {
+      "sample_id": "high_school_geography:99",
+      "subject": "high_school_geography",
+      "source_row": 99
+    },
+    {
+      "sample_id": "high_school_government_and_politics:155",
+      "subject": "high_school_government_and_politics",
+      "source_row": 155
+    },
+    {
+      "sample_id": "high_school_macroeconomics:334",
+      "subject": "high_school_macroeconomics",
+      "source_row": 334
+    },
+    {
+      "sample_id": "high_school_mathematics:14",
+      "subject": "high_school_mathematics",
+      "source_row": 14
+    },
+    {
+      "sample_id": "high_school_microeconomics:137",
+      "subject": "high_school_microeconomics",
+      "source_row": 137
+    },
+    {
+      "sample_id": "high_school_physics:14",
+      "subject": "high_school_physics",
+      "source_row": 14
+    },
+    {
+      "sample_id": "high_school_psychology:26",
+      "subject": "high_school_psychology",
+      "source_row": 26
+    },
+    {
+      "sample_id": "high_school_statistics:169",
+      "subject": "high_school_statistics",
+      "source_row": 169
+    },
+    {
+      "sample_id": "high_school_us_history:195",
+      "subject": "high_school_us_history",
+      "source_row": 195
+    },
+    {
+      "sample_id": "high_school_world_history:148",
+      "subject": "high_school_world_history",
+      "source_row": 148
+    },
+    {
+      "sample_id": "human_aging:106",
+      "subject": "human_aging",
+      "source_row": 106
+    },
+    {
+      "sample_id": "human_sexuality:97",
+      "subject": "human_sexuality",
+      "source_row": 97
+    },
+    {
+      "sample_id": "international_law:31",
+      "subject": "international_law",
+      "source_row": 31
+    },
+    {
+      "sample_id": "jurisprudence:77",
+      "subject": "jurisprudence",
+      "source_row": 77
+    },
+    {
+      "sample_id": "logical_fallacies:122",
+      "subject": "logical_fallacies",
+      "source_row": 122
+    },
+    {
+      "sample_id": "machine_learning:37",
+      "subject": "machine_learning",
+      "source_row": 37
+    },
+    {
+      "sample_id": "management:33",
+      "subject": "management",
+      "source_row": 33
+    },
+    {
+      "sample_id": "marketing:14",
+      "subject": "marketing",
+      "source_row": 14
+    },
+    {
+      "sample_id": "medical_genetics:34",
+      "subject": "medical_genetics",
+      "source_row": 34
+    },
+    {
+      "sample_id": "miscellaneous:366",
+      "subject": "miscellaneous",
+      "source_row": 366
+    },
+    {
+      "sample_id": "moral_disputes:151",
+      "subject": "moral_disputes",
+      "source_row": 151
+    },
+    {
+      "sample_id": "moral_scenarios:877",
+      "subject": "moral_scenarios",
+      "source_row": 877
+    },
+    {
+      "sample_id": "nutrition:146",
+      "subject": "nutrition",
+      "source_row": 146
+    },
+    {
+      "sample_id": "philosophy:92",
+      "subject": "philosophy",
+      "source_row": 92
+    },
+    {
+      "sample_id": "prehistory:287",
+      "subject": "prehistory",
+      "source_row": 287
+    },
+    {
+      "sample_id": "professional_accounting:158",
+      "subject": "professional_accounting",
+      "source_row": 158
+    },
+    {
+      "sample_id": "professional_law:778",
+      "subject": "professional_law",
+      "source_row": 778
+    },
+    {
+      "sample_id": "professional_medicine:191",
+      "subject": "professional_medicine",
+      "source_row": 191
+    },
+    {
+      "sample_id": "professional_psychology:73",
+      "subject": "professional_psychology",
+      "source_row": 73
+    },
+    {
+      "sample_id": "public_relations:69",
+      "subject": "public_relations",
+      "source_row": 69
+    },
+    {
+      "sample_id": "security_studies:72",
+      "subject": "security_studies",
+      "source_row": 72
+    },
+    {
+      "sample_id": "sociology:172",
+      "subject": "sociology",
+      "source_row": 172
+    },
+    {
+      "sample_id": "us_foreign_policy:69",
+      "subject": "us_foreign_policy",
+      "source_row": 69
+    },
+    {
+      "sample_id": "virology:100",
+      "subject": "virology",
+      "source_row": 100
+    },
+    {
+      "sample_id": "world_religions:143",
+      "subject": "world_religions",
+      "source_row": 143
+    },
+    {
+      "sample_id": "abstract_algebra:14",
+      "subject": "abstract_algebra",
+      "source_row": 14
+    },
+    {
+      "sample_id": "anatomy:27",
+      "subject": "anatomy",
+      "source_row": 27
+    },
+    {
+      "sample_id": "astronomy:38",
+      "subject": "astronomy",
+      "source_row": 38
+    },
+    {
+      "sample_id": "business_ethics:83",
+      "subject": "business_ethics",
+      "source_row": 83
+    },
+    {
+      "sample_id": "clinical_knowledge:253",
+      "subject": "clinical_knowledge",
+      "source_row": 253
+    },
+    {
+      "sample_id": "college_biology:143",
+      "subject": "college_biology",
+      "source_row": 143
+    },
+    {
+      "sample_id": "college_chemistry:66",
+      "subject": "college_chemistry",
+      "source_row": 66
+    },
+    {
+      "sample_id": "college_computer_science:15",
+      "subject": "college_computer_science",
+      "source_row": 15
+    },
+    {
+      "sample_id": "college_mathematics:62",
+      "subject": "college_mathematics",
+      "source_row": 62
+    },
+    {
+      "sample_id": "college_medicine:31",
+      "subject": "college_medicine",
+      "source_row": 31
+    },
+    {
+      "sample_id": "college_physics:11",
+      "subject": "college_physics",
+      "source_row": 11
+    },
+    {
+      "sample_id": "computer_security:64",
+      "subject": "computer_security",
+      "source_row": 64
+    },
+    {
+      "sample_id": "conceptual_physics:222",
+      "subject": "conceptual_physics",
+      "source_row": 222
+    },
+    {
+      "sample_id": "econometrics:21",
+      "subject": "econometrics",
+      "source_row": 21
+    },
+    {
+      "sample_id": "electrical_engineering:106",
+      "subject": "electrical_engineering",
+      "source_row": 106
+    },
+    {
+      "sample_id": "elementary_mathematics:232",
+      "subject": "elementary_mathematics",
+      "source_row": 232
+    },
+    {
+      "sample_id": "formal_logic:125",
+      "subject": "formal_logic",
+      "source_row": 125
+    },
+    {
+      "sample_id": "global_facts:50",
+      "subject": "global_facts",
+      "source_row": 50
+    },
+    {
+      "sample_id": "high_school_biology:144",
+      "subject": "high_school_biology",
+      "source_row": 144
+    },
+    {
+      "sample_id": "high_school_chemistry:159",
+      "subject": "high_school_chemistry",
+      "source_row": 159
+    },
+    {
+      "sample_id": "high_school_computer_science:77",
+      "subject": "high_school_computer_science",
+      "source_row": 77
+    },
+    {
+      "sample_id": "high_school_european_history:55",
+      "subject": "high_school_european_history",
+      "source_row": 55
+    },
+    {
+      "sample_id": "high_school_geography:8",
+      "subject": "high_school_geography",
+      "source_row": 8
+    },
+    {
+      "sample_id": "high_school_government_and_politics:87",
+      "subject": "high_school_government_and_politics",
+      "source_row": 87
+    },
+    {
+      "sample_id": "high_school_macroeconomics:351",
+      "subject": "high_school_macroeconomics",
+      "source_row": 351
+    },
+    {
+      "sample_id": "high_school_mathematics:118",
+      "subject": "high_school_mathematics",
+      "source_row": 118
+    },
+    {
+      "sample_id": "high_school_microeconomics:9",
+      "subject": "high_school_microeconomics",
+      "source_row": 9
+    },
+    {
+      "sample_id": "high_school_physics:79",
+      "subject": "high_school_physics",
+      "source_row": 79
+    },
+    {
+      "sample_id": "high_school_psychology:397",
+      "subject": "high_school_psychology",
+      "source_row": 397
+    },
+    {
+      "sample_id": "high_school_statistics:74",
+      "subject": "high_school_statistics",
+      "source_row": 74
+    },
+    {
+      "sample_id": "high_school_us_history:114",
+      "subject": "high_school_us_history",
+      "source_row": 114
+    },
+    {
+      "sample_id": "high_school_world_history:194",
+      "subject": "high_school_world_history",
+      "source_row": 194
+    },
+    {
+      "sample_id": "human_aging:69",
+      "subject": "human_aging",
+      "source_row": 69
+    },
+    {
+      "sample_id": "human_sexuality:120",
+      "subject": "human_sexuality",
+      "source_row": 120
+    },
+    {
+      "sample_id": "international_law:37",
+      "subject": "international_law",
+      "source_row": 37
+    },
+    {
+      "sample_id": "jurisprudence:21",
+      "subject": "jurisprudence",
+      "source_row": 21
+    },
+    {
+      "sample_id": "logical_fallacies:83",
+      "subject": "logical_fallacies",
+      "source_row": 83
+    },
+    {
+      "sample_id": "machine_learning:92",
+      "subject": "machine_learning",
+      "source_row": 92
+    },
+    {
+      "sample_id": "management:29",
+      "subject": "management",
+      "source_row": 29
+    },
+    {
+      "sample_id": "marketing:204",
+      "subject": "marketing",
+      "source_row": 204
+    },
+    {
+      "sample_id": "medical_genetics:80",
+      "subject": "medical_genetics",
+      "source_row": 80
+    },
+    {
+      "sample_id": "miscellaneous:163",
+      "subject": "miscellaneous",
+      "source_row": 163
+    },
+    {
+      "sample_id": "moral_disputes:43",
+      "subject": "moral_disputes",
+      "source_row": 43
+    },
+    {
+      "sample_id": "moral_scenarios:854",
+      "subject": "moral_scenarios",
+      "source_row": 854
+    },
+    {
+      "sample_id": "nutrition:236",
+      "subject": "nutrition",
+      "source_row": 236
+    },
+    {
+      "sample_id": "philosophy:87",
+      "subject": "philosophy",
+      "source_row": 87
+    },
+    {
+      "sample_id": "prehistory:137",
+      "subject": "prehistory",
+      "source_row": 137
+    },
+    {
+      "sample_id": "professional_accounting:218",
+      "subject": "professional_accounting",
+      "source_row": 218
+    },
+    {
+      "sample_id": "professional_law:950",
+      "subject": "professional_law",
+      "source_row": 950
+    },
+    {
+      "sample_id": "professional_medicine:58",
+      "subject": "professional_medicine",
+      "source_row": 58
+    },
+    {
+      "sample_id": "professional_psychology:497",
+      "subject": "professional_psychology",
+      "source_row": 497
+    },
+    {
+      "sample_id": "public_relations:57",
+      "subject": "public_relations",
+      "source_row": 57
+    },
+    {
+      "sample_id": "security_studies:111",
+      "subject": "security_studies",
+      "source_row": 111
+    },
+    {
+      "sample_id": "sociology:79",
+      "subject": "sociology",
+      "source_row": 79
+    },
+    {
+      "sample_id": "us_foreign_policy:67",
+      "subject": "us_foreign_policy",
+      "source_row": 67
+    },
+    {
+      "sample_id": "virology:164",
+      "subject": "virology",
+      "source_row": 164
+    },
+    {
+      "sample_id": "world_religions:140",
+      "subject": "world_religions",
+      "source_row": 140
+    },
+    {
+      "sample_id": "abstract_algebra:74",
+      "subject": "abstract_algebra",
+      "source_row": 74
+    },
+    {
+      "sample_id": "anatomy:42",
+      "subject": "anatomy",
+      "source_row": 42
+    },
+    {
+      "sample_id": "astronomy:64",
+      "subject": "astronomy",
+      "source_row": 64
+    },
+    {
+      "sample_id": "business_ethics:55",
+      "subject": "business_ethics",
+      "source_row": 55
+    },
+    {
+      "sample_id": "clinical_knowledge:111",
+      "subject": "clinical_knowledge",
+      "source_row": 111
+    },
+    {
+      "sample_id": "college_biology:87",
+      "subject": "college_biology",
+      "source_row": 87
+    },
+    {
+      "sample_id": "college_chemistry:56",
+      "subject": "college_chemistry",
+      "source_row": 56
+    },
+    {
+      "sample_id": "college_computer_science:36",
+      "subject": "college_computer_science",
+      "source_row": 36
+    },
+    {
+      "sample_id": "college_mathematics:50",
+      "subject": "college_mathematics",
+      "source_row": 50
+    },
+    {
+      "sample_id": "college_medicine:171",
+      "subject": "college_medicine",
+      "source_row": 171
+    },
+    {
+      "sample_id": "college_physics:39",
+      "subject": "college_physics",
+      "source_row": 39
+    },
+    {
+      "sample_id": "computer_security:21",
+      "subject": "computer_security",
+      "source_row": 21
+    },
+    {
+      "sample_id": "conceptual_physics:64",
+      "subject": "conceptual_physics",
+      "source_row": 64
+    },
+    {
+      "sample_id": "econometrics:13",
+      "subject": "econometrics",
+      "source_row": 13
+    },
+    {
+      "sample_id": "electrical_engineering:25",
+      "subject": "electrical_engineering",
+      "source_row": 25
+    },
+    {
+      "sample_id": "elementary_mathematics:257",
+      "subject": "elementary_mathematics",
+      "source_row": 257
+    },
+    {
+      "sample_id": "formal_logic:91",
+      "subject": "formal_logic",
+      "source_row": 91
+    },
+    {
+      "sample_id": "global_facts:1",
+      "subject": "global_facts",
+      "source_row": 1
+    },
+    {
+      "sample_id": "high_school_biology:24",
+      "subject": "high_school_biology",
+      "source_row": 24
+    },
+    {
+      "sample_id": "high_school_chemistry:36",
+      "subject": "high_school_chemistry",
+      "source_row": 36
+    },
+    {
+      "sample_id": "high_school_computer_science:75",
+      "subject": "high_school_computer_science",
+      "source_row": 75
+    },
+    {
+      "sample_id": "high_school_european_history:158",
+      "subject": "high_school_european_history",
+      "source_row": 158
+    },
+    {
+      "sample_id": "high_school_geography:122",
+      "subject": "high_school_geography",
+      "source_row": 122
+    },
+    {
+      "sample_id": "high_school_government_and_politics:6",
+      "subject": "high_school_government_and_politics",
+      "source_row": 6
+    },
+    {
+      "sample_id": "high_school_macroeconomics:89",
+      "subject": "high_school_macroeconomics",
+      "source_row": 89
+    },
+    {
+      "sample_id": "high_school_mathematics:121",
+      "subject": "high_school_mathematics",
+      "source_row": 121
+    },
+    {
+      "sample_id": "high_school_microeconomics:1",
+      "subject": "high_school_microeconomics",
+      "source_row": 1
+    },
+    {
+      "sample_id": "high_school_physics:88",
+      "subject": "high_school_physics",
+      "source_row": 88
+    },
+    {
+      "sample_id": "high_school_psychology:270",
+      "subject": "high_school_psychology",
+      "source_row": 270
+    },
+    {
+      "sample_id": "high_school_statistics:191",
+      "subject": "high_school_statistics",
+      "source_row": 191
+    },
+    {
+      "sample_id": "high_school_us_history:50",
+      "subject": "high_school_us_history",
+      "source_row": 50
+    },
+    {
+      "sample_id": "high_school_world_history:76",
+      "subject": "high_school_world_history",
+      "source_row": 76
+    },
+    {
+      "sample_id": "human_aging:195",
+      "subject": "human_aging",
+      "source_row": 195
+    },
+    {
+      "sample_id": "human_sexuality:79",
+      "subject": "human_sexuality",
+      "source_row": 79
+    },
+    {
+      "sample_id": "international_law:45",
+      "subject": "international_law",
+      "source_row": 45
+    },
+    {
+      "sample_id": "jurisprudence:49",
+      "subject": "jurisprudence",
+      "source_row": 49
+    },
+    {
+      "sample_id": "logical_fallacies:128",
+      "subject": "logical_fallacies",
+      "source_row": 128
+    },
+    {
+      "sample_id": "machine_learning:70",
+      "subject": "machine_learning",
+      "source_row": 70
+    },
+    {
+      "sample_id": "management:84",
+      "subject": "management",
+      "source_row": 84
+    },
+    {
+      "sample_id": "marketing:23",
+      "subject": "marketing",
+      "source_row": 23
+    },
+    {
+      "sample_id": "medical_genetics:58",
+      "subject": "medical_genetics",
+      "source_row": 58
+    },
+    {
+      "sample_id": "miscellaneous:747",
+      "subject": "miscellaneous",
+      "source_row": 747
+    },
+    {
+      "sample_id": "moral_disputes:45",
+      "subject": "moral_disputes",
+      "source_row": 45
+    },
+    {
+      "sample_id": "moral_scenarios:613",
+      "subject": "moral_scenarios",
+      "source_row": 613
+    },
+    {
+      "sample_id": "nutrition:305",
+      "subject": "nutrition",
+      "source_row": 305
+    },
+    {
+      "sample_id": "philosophy:33",
+      "subject": "philosophy",
+      "source_row": 33
+    },
+    {
+      "sample_id": "prehistory:259",
+      "subject": "prehistory",
+      "source_row": 259
+    },
+    {
+      "sample_id": "professional_accounting:15",
+      "subject": "professional_accounting",
+      "source_row": 15
+    },
+    {
+      "sample_id": "professional_law:805",
+      "subject": "professional_law",
+      "source_row": 805
+    },
+    {
+      "sample_id": "professional_medicine:19",
+      "subject": "professional_medicine",
+      "source_row": 19
+    },
+    {
+      "sample_id": "professional_psychology:324",
+      "subject": "professional_psychology",
+      "source_row": 324
+    },
+    {
+      "sample_id": "public_relations:13",
+      "subject": "public_relations",
+      "source_row": 13
+    },
+    {
+      "sample_id": "security_studies:223",
+      "subject": "security_studies",
+      "source_row": 223
+    },
+    {
+      "sample_id": "sociology:4",
+      "subject": "sociology",
+      "source_row": 4
+    },
+    {
+      "sample_id": "us_foreign_policy:80",
+      "subject": "us_foreign_policy",
+      "source_row": 80
+    },
+    {
+      "sample_id": "virology:157",
+      "subject": "virology",
+      "source_row": 157
+    },
+    {
+      "sample_id": "world_religions:7",
+      "subject": "world_religions",
+      "source_row": 7
+    },
+    {
+      "sample_id": "abstract_algebra:34",
+      "subject": "abstract_algebra",
+      "source_row": 34
+    },
+    {
+      "sample_id": "anatomy:83",
+      "subject": "anatomy",
+      "source_row": 83
+    },
+    {
+      "sample_id": "astronomy:80",
+      "subject": "astronomy",
+      "source_row": 80
+    },
+    {
+      "sample_id": "business_ethics:75",
+      "subject": "business_ethics",
+      "source_row": 75
+    },
+    {
+      "sample_id": "clinical_knowledge:103",
+      "subject": "clinical_knowledge",
+      "source_row": 103
+    },
+    {
+      "sample_id": "college_biology:54",
+      "subject": "college_biology",
+      "source_row": 54
+    },
+    {
+      "sample_id": "college_chemistry:74",
+      "subject": "college_chemistry",
+      "source_row": 74
+    },
+    {
+      "sample_id": "college_computer_science:65",
+      "subject": "college_computer_science",
+      "source_row": 65
+    },
+    {
+      "sample_id": "college_mathematics:71",
+      "subject": "college_mathematics",
+      "source_row": 71
+    },
+    {
+      "sample_id": "college_medicine:106",
+      "subject": "college_medicine",
+      "source_row": 106
+    },
+    {
+      "sample_id": "college_physics:53",
+      "subject": "college_physics",
+      "source_row": 53
+    },
+    {
+      "sample_id": "computer_security:17",
+      "subject": "computer_security",
+      "source_row": 17
+    },
+    {
+      "sample_id": "conceptual_physics:172",
+      "subject": "conceptual_physics",
+      "source_row": 172
+    },
+    {
+      "sample_id": "econometrics:78",
+      "subject": "econometrics",
+      "source_row": 78
+    },
+    {
+      "sample_id": "electrical_engineering:51",
+      "subject": "electrical_engineering",
+      "source_row": 51
+    },
+    {
+      "sample_id": "elementary_mathematics:346",
+      "subject": "elementary_mathematics",
+      "source_row": 346
+    },
+    {
+      "sample_id": "formal_logic:98",
+      "subject": "formal_logic",
+      "source_row": 98
+    },
+    {
+      "sample_id": "global_facts:40",
+      "subject": "global_facts",
+      "source_row": 40
+    },
+    {
+      "sample_id": "high_school_biology:38",
+      "subject": "high_school_biology",
+      "source_row": 38
+    },
+    {
+      "sample_id": "high_school_chemistry:85",
+      "subject": "high_school_chemistry",
+      "source_row": 85
+    },
+    {
+      "sample_id": "high_school_computer_science:70",
+      "subject": "high_school_computer_science",
+      "source_row": 70
+    },
+    {
+      "sample_id": "high_school_european_history:65",
+      "subject": "high_school_european_history",
+      "source_row": 65
+    },
+    {
+      "sample_id": "high_school_geography:179",
+      "subject": "high_school_geography",
+      "source_row": 179
+    },
+    {
+      "sample_id": "high_school_government_and_politics:56",
+      "subject": "high_school_government_and_politics",
+      "source_row": 56
+    },
+    {
+      "sample_id": "high_school_macroeconomics:367",
+      "subject": "high_school_macroeconomics",
+      "source_row": 367
+    },
+    {
+      "sample_id": "high_school_mathematics:239",
+      "subject": "high_school_mathematics",
+      "source_row": 239
+    },
+    {
+      "sample_id": "high_school_microeconomics:158",
+      "subject": "high_school_microeconomics",
+      "source_row": 158
+    },
+    {
+      "sample_id": "high_school_physics:34",
+      "subject": "high_school_physics",
+      "source_row": 34
+    },
+    {
+      "sample_id": "high_school_psychology:262",
+      "subject": "high_school_psychology",
+      "source_row": 262
+    },
+    {
+      "sample_id": "high_school_statistics:211",
+      "subject": "high_school_statistics",
+      "source_row": 211
+    },
+    {
+      "sample_id": "high_school_us_history:38",
+      "subject": "high_school_us_history",
+      "source_row": 38
+    },
+    {
+      "sample_id": "high_school_world_history:79",
+      "subject": "high_school_world_history",
+      "source_row": 79
+    },
+    {
+      "sample_id": "human_aging:156",
+      "subject": "human_aging",
+      "source_row": 156
+    },
+    {
+      "sample_id": "human_sexuality:47",
+      "subject": "human_sexuality",
+      "source_row": 47
+    },
+    {
+      "sample_id": "international_law:54",
+      "subject": "international_law",
+      "source_row": 54
+    },
+    {
+      "sample_id": "jurisprudence:19",
+      "subject": "jurisprudence",
+      "source_row": 19
+    },
+    {
+      "sample_id": "logical_fallacies:143",
+      "subject": "logical_fallacies",
+      "source_row": 143
+    },
+    {
+      "sample_id": "machine_learning:62",
+      "subject": "machine_learning",
+      "source_row": 62
+    },
+    {
+      "sample_id": "management:10",
+      "subject": "management",
+      "source_row": 10
+    },
+    {
+      "sample_id": "marketing:208",
+      "subject": "marketing",
+      "source_row": 208
+    },
+    {
+      "sample_id": "medical_genetics:16",
+      "subject": "medical_genetics",
+      "source_row": 16
+    },
+    {
+      "sample_id": "miscellaneous:220",
+      "subject": "miscellaneous",
+      "source_row": 220
+    },
+    {
+      "sample_id": "moral_disputes:295",
+      "subject": "moral_disputes",
+      "source_row": 295
+    },
+    {
+      "sample_id": "moral_scenarios:304",
+      "subject": "moral_scenarios",
+      "source_row": 304
+    },
+    {
+      "sample_id": "nutrition:127",
+      "subject": "nutrition",
+      "source_row": 127
+    },
+    {
+      "sample_id": "philosophy:34",
+      "subject": "philosophy",
+      "source_row": 34
+    },
+    {
+      "sample_id": "prehistory:113",
+      "subject": "prehistory",
+      "source_row": 113
+    },
+    {
+      "sample_id": "professional_accounting:47",
+      "subject": "professional_accounting",
+      "source_row": 47
+    },
+    {
+      "sample_id": "professional_law:658",
+      "subject": "professional_law",
+      "source_row": 658
+    },
+    {
+      "sample_id": "professional_medicine:89",
+      "subject": "professional_medicine",
+      "source_row": 89
+    },
+    {
+      "sample_id": "professional_psychology:319",
+      "subject": "professional_psychology",
+      "source_row": 319
+    },
+    {
+      "sample_id": "public_relations:33",
+      "subject": "public_relations",
+      "source_row": 33
+    },
+    {
+      "sample_id": "security_studies:74",
+      "subject": "security_studies",
+      "source_row": 74
+    },
+    {
+      "sample_id": "sociology:48",
+      "subject": "sociology",
+      "source_row": 48
+    },
+    {
+      "sample_id": "us_foreign_policy:97",
+      "subject": "us_foreign_policy",
+      "source_row": 97
+    },
+    {
+      "sample_id": "virology:30",
+      "subject": "virology",
+      "source_row": 30
+    },
+    {
+      "sample_id": "world_religions:163",
+      "subject": "world_religions",
+      "source_row": 163
+    },
+    {
+      "sample_id": "abstract_algebra:61",
+      "subject": "abstract_algebra",
+      "source_row": 61
+    },
+    {
+      "sample_id": "anatomy:90",
+      "subject": "anatomy",
+      "source_row": 90
+    },
+    {
+      "sample_id": "astronomy:16",
+      "subject": "astronomy",
+      "source_row": 16
+    },
+    {
+      "sample_id": "business_ethics:7",
+      "subject": "business_ethics",
+      "source_row": 7
+    },
+    {
+      "sample_id": "clinical_knowledge:22",
+      "subject": "clinical_knowledge",
+      "source_row": 22
+    },
+    {
+      "sample_id": "college_biology:13",
+      "subject": "college_biology",
+      "source_row": 13
+    },
+    {
+      "sample_id": "college_chemistry:84",
+      "subject": "college_chemistry",
+      "source_row": 84
+    },
+    {
+      "sample_id": "college_computer_science:19",
+      "subject": "college_computer_science",
+      "source_row": 19
+    },
+    {
+      "sample_id": "college_mathematics:16",
+      "subject": "college_mathematics",
+      "source_row": 16
+    },
+    {
+      "sample_id": "college_medicine:101",
+      "subject": "college_medicine",
+      "source_row": 101
+    },
+    {
+      "sample_id": "college_physics:96",
+      "subject": "college_physics",
+      "source_row": 96
+    },
+    {
+      "sample_id": "computer_security:51",
+      "subject": "computer_security",
+      "source_row": 51
+    },
+    {
+      "sample_id": "conceptual_physics:162",
+      "subject": "conceptual_physics",
+      "source_row": 162
+    },
+    {
+      "sample_id": "econometrics:52",
+      "subject": "econometrics",
+      "source_row": 52
+    },
+    {
+      "sample_id": "electrical_engineering:55",
+      "subject": "electrical_engineering",
+      "source_row": 55
+    },
+    {
+      "sample_id": "elementary_mathematics:49",
+      "subject": "elementary_mathematics",
+      "source_row": 49
+    },
+    {
+      "sample_id": "formal_logic:76",
+      "subject": "formal_logic",
+      "source_row": 76
+    },
+    {
+      "sample_id": "global_facts:91",
+      "subject": "global_facts",
+      "source_row": 91
+    },
+    {
+      "sample_id": "high_school_biology:76",
+      "subject": "high_school_biology",
+      "source_row": 76
+    },
+    {
+      "sample_id": "high_school_chemistry:72",
+      "subject": "high_school_chemistry",
+      "source_row": 72
+    },
+    {
+      "sample_id": "high_school_computer_science:43",
+      "subject": "high_school_computer_science",
+      "source_row": 43
+    },
+    {
+      "sample_id": "high_school_european_history:109",
+      "subject": "high_school_european_history",
+      "source_row": 109
+    },
+    {
+      "sample_id": "high_school_geography:86",
+      "subject": "high_school_geography",
+      "source_row": 86
+    },
+    {
+      "sample_id": "high_school_government_and_politics:3",
+      "subject": "high_school_government_and_politics",
+      "source_row": 3
+    },
+    {
+      "sample_id": "high_school_macroeconomics:384",
+      "subject": "high_school_macroeconomics",
+      "source_row": 384
+    },
+    {
+      "sample_id": "high_school_mathematics:124",
+      "subject": "high_school_mathematics",
+      "source_row": 124
+    },
+    {
+      "sample_id": "high_school_microeconomics:226",
+      "subject": "high_school_microeconomics",
+      "source_row": 226
+    },
+    {
+      "sample_id": "high_school_physics:104",
+      "subject": "high_school_physics",
+      "source_row": 104
+    },
+    {
+      "sample_id": "high_school_psychology:107",
+      "subject": "high_school_psychology",
+      "source_row": 107
+    },
+    {
+      "sample_id": "high_school_statistics:5",
+      "subject": "high_school_statistics",
+      "source_row": 5
+    },
+    {
+      "sample_id": "high_school_us_history:74",
+      "subject": "high_school_us_history",
+      "source_row": 74
+    },
+    {
+      "sample_id": "high_school_world_history:113",
+      "subject": "high_school_world_history",
+      "source_row": 113
+    },
+    {
+      "sample_id": "human_aging:190",
+      "subject": "human_aging",
+      "source_row": 190
+    },
+    {
+      "sample_id": "human_sexuality:86",
+      "subject": "human_sexuality",
+      "source_row": 86
+    },
+    {
+      "sample_id": "international_law:56",
+      "subject": "international_law",
+      "source_row": 56
+    },
+    {
+      "sample_id": "jurisprudence:24",
+      "subject": "jurisprudence",
+      "source_row": 24
+    },
+    {
+      "sample_id": "logical_fallacies:136",
+      "subject": "logical_fallacies",
+      "source_row": 136
+    },
+    {
+      "sample_id": "machine_learning:105",
+      "subject": "machine_learning",
+      "source_row": 105
+    },
+    {
+      "sample_id": "management:98",
+      "subject": "management",
+      "source_row": 98
+    },
+    {
+      "sample_id": "marketing:157",
+      "subject": "marketing",
+      "source_row": 157
+    },
+    {
+      "sample_id": "medical_genetics:91",
+      "subject": "medical_genetics",
+      "source_row": 91
+    },
+    {
+      "sample_id": "miscellaneous:309",
+      "subject": "miscellaneous",
+      "source_row": 309
+    },
+    {
+      "sample_id": "moral_disputes:335",
+      "subject": "moral_disputes",
+      "source_row": 335
+    },
+    {
+      "sample_id": "moral_scenarios:741",
+      "subject": "moral_scenarios",
+      "source_row": 741
+    },
+    {
+      "sample_id": "nutrition:139",
+      "subject": "nutrition",
+      "source_row": 139
+    },
+    {
+      "sample_id": "philosophy:301",
+      "subject": "philosophy",
+      "source_row": 301
+    },
+    {
+      "sample_id": "prehistory:26",
+      "subject": "prehistory",
+      "source_row": 26
+    },
+    {
+      "sample_id": "professional_accounting:253",
+      "subject": "professional_accounting",
+      "source_row": 253
+    },
+    {
+      "sample_id": "professional_law:397",
+      "subject": "professional_law",
+      "source_row": 397
+    },
+    {
+      "sample_id": "professional_medicine:129",
+      "subject": "professional_medicine",
+      "source_row": 129
+    },
+    {
+      "sample_id": "professional_psychology:131",
+      "subject": "professional_psychology",
+      "source_row": 131
+    },
+    {
+      "sample_id": "public_relations:9",
+      "subject": "public_relations",
+      "source_row": 9
+    },
+    {
+      "sample_id": "security_studies:118",
+      "subject": "security_studies",
+      "source_row": 118
+    },
+    {
+      "sample_id": "sociology:15",
+      "subject": "sociology",
+      "source_row": 15
+    },
+    {
+      "sample_id": "us_foreign_policy:16",
+      "subject": "us_foreign_policy",
+      "source_row": 16
+    },
+    {
+      "sample_id": "virology:154",
+      "subject": "virology",
+      "source_row": 154
+    },
+    {
+      "sample_id": "world_religions:159",
+      "subject": "world_religions",
+      "source_row": 159
+    },
+    {
+      "sample_id": "abstract_algebra:85",
+      "subject": "abstract_algebra",
+      "source_row": 85
+    },
+    {
+      "sample_id": "anatomy:87",
+      "subject": "anatomy",
+      "source_row": 87
+    },
+    {
+      "sample_id": "astronomy:14",
+      "subject": "astronomy",
+      "source_row": 14
+    },
+    {
+      "sample_id": "business_ethics:78",
+      "subject": "business_ethics",
+      "source_row": 78
+    },
+    {
+      "sample_id": "clinical_knowledge:112",
+      "subject": "clinical_knowledge",
+      "source_row": 112
+    },
+    {
+      "sample_id": "college_biology:142",
+      "subject": "college_biology",
+      "source_row": 142
+    },
+    {
+      "sample_id": "college_chemistry:44",
+      "subject": "college_chemistry",
+      "source_row": 44
+    },
+    {
+      "sample_id": "college_computer_science:80",
+      "subject": "college_computer_science",
+      "source_row": 80
+    },
+    {
+      "sample_id": "college_mathematics:74",
+      "subject": "college_mathematics",
+      "source_row": 74
+    },
+    {
+      "sample_id": "college_medicine:103",
+      "subject": "college_medicine",
+      "source_row": 103
+    },
+    {
+      "sample_id": "college_physics:68",
+      "subject": "college_physics",
+      "source_row": 68
+    },
+    {
+      "sample_id": "computer_security:29",
+      "subject": "computer_security",
+      "source_row": 29
+    },
+    {
+      "sample_id": "conceptual_physics:27",
+      "subject": "conceptual_physics",
+      "source_row": 27
+    },
+    {
+      "sample_id": "econometrics:89",
+      "subject": "econometrics",
+      "source_row": 89
+    },
+    {
+      "sample_id": "electrical_engineering:28",
+      "subject": "electrical_engineering",
+      "source_row": 28
+    },
+    {
+      "sample_id": "elementary_mathematics:64",
+      "subject": "elementary_mathematics",
+      "source_row": 64
+    },
+    {
+      "sample_id": "formal_logic:32",
+      "subject": "formal_logic",
+      "source_row": 32
+    },
+    {
+      "sample_id": "global_facts:93",
+      "subject": "global_facts",
+      "source_row": 93
+    },
+    {
+      "sample_id": "high_school_biology:170",
+      "subject": "high_school_biology",
+      "source_row": 170
+    },
+    {
+      "sample_id": "high_school_chemistry:97",
+      "subject": "high_school_chemistry",
+      "source_row": 97
+    },
+    {
+      "sample_id": "high_school_computer_science:94",
+      "subject": "high_school_computer_science",
+      "source_row": 94
+    },
+    {
+      "sample_id": "high_school_european_history:147",
+      "subject": "high_school_european_history",
+      "source_row": 147
+    },
+    {
+      "sample_id": "high_school_geography:90",
+      "subject": "high_school_geography",
+      "source_row": 90
+    },
+    {
+      "sample_id": "high_school_government_and_politics:188",
+      "subject": "high_school_government_and_politics",
+      "source_row": 188
+    },
+    {
+      "sample_id": "high_school_macroeconomics:170",
+      "subject": "high_school_macroeconomics",
+      "source_row": 170
+    },
+    {
+      "sample_id": "high_school_mathematics:155",
+      "subject": "high_school_mathematics",
+      "source_row": 155
+    },
+    {
+      "sample_id": "high_school_microeconomics:160",
+      "subject": "high_school_microeconomics",
+      "source_row": 160
+    },
+    {
+      "sample_id": "high_school_physics:44",
+      "subject": "high_school_physics",
+      "source_row": 44
+    },
+    {
+      "sample_id": "high_school_psychology:525",
+      "subject": "high_school_psychology",
+      "source_row": 525
+    },
+    {
+      "sample_id": "high_school_statistics:25",
+      "subject": "high_school_statistics",
+      "source_row": 25
+    },
+    {
+      "sample_id": "high_school_us_history:51",
+      "subject": "high_school_us_history",
+      "source_row": 51
+    },
+    {
+      "sample_id": "high_school_world_history:89",
+      "subject": "high_school_world_history",
+      "source_row": 89
+    },
+    {
+      "sample_id": "human_aging:197",
+      "subject": "human_aging",
+      "source_row": 197
+    },
+    {
+      "sample_id": "human_sexuality:127",
+      "subject": "human_sexuality",
+      "source_row": 127
+    },
+    {
+      "sample_id": "international_law:99",
+      "subject": "international_law",
+      "source_row": 99
+    },
+    {
+      "sample_id": "jurisprudence:71",
+      "subject": "jurisprudence",
+      "source_row": 71
+    },
+    {
+      "sample_id": "logical_fallacies:155",
+      "subject": "logical_fallacies",
+      "source_row": 155
+    },
+    {
+      "sample_id": "machine_learning:30",
+      "subject": "machine_learning",
+      "source_row": 30
+    },
+    {
+      "sample_id": "management:41",
+      "subject": "management",
+      "source_row": 41
+    },
+    {
+      "sample_id": "marketing:103",
+      "subject": "marketing",
+      "source_row": 103
+    },
+    {
+      "sample_id": "medical_genetics:48",
+      "subject": "medical_genetics",
+      "source_row": 48
+    },
+    {
+      "sample_id": "miscellaneous:646",
+      "subject": "miscellaneous",
+      "source_row": 646
+    },
+    {
+      "sample_id": "moral_disputes:249",
+      "subject": "moral_disputes",
+      "source_row": 249
+    },
+    {
+      "sample_id": "moral_scenarios:677",
+      "subject": "moral_scenarios",
+      "source_row": 677
+    },
+    {
+      "sample_id": "nutrition:122",
+      "subject": "nutrition",
+      "source_row": 122
+    },
+    {
+      "sample_id": "philosophy:40",
+      "subject": "philosophy",
+      "source_row": 40
+    },
+    {
+      "sample_id": "prehistory:75",
+      "subject": "prehistory",
+      "source_row": 75
+    },
+    {
+      "sample_id": "professional_accounting:196",
+      "subject": "professional_accounting",
+      "source_row": 196
+    },
+    {
+      "sample_id": "professional_law:1214",
+      "subject": "professional_law",
+      "source_row": 1214
+    },
+    {
+      "sample_id": "professional_medicine:237",
+      "subject": "professional_medicine",
+      "source_row": 237
+    },
+    {
+      "sample_id": "professional_psychology:423",
+      "subject": "professional_psychology",
+      "source_row": 423
+    },
+    {
+      "sample_id": "public_relations:87",
+      "subject": "public_relations",
+      "source_row": 87
+    },
+    {
+      "sample_id": "security_studies:133",
+      "subject": "security_studies",
+      "source_row": 133
+    },
+    {
+      "sample_id": "sociology:194",
+      "subject": "sociology",
+      "source_row": 194
+    },
+    {
+      "sample_id": "us_foreign_policy:36",
+      "subject": "us_foreign_policy",
+      "source_row": 36
+    },
+    {
+      "sample_id": "virology:126",
+      "subject": "virology",
+      "source_row": 126
+    },
+    {
+      "sample_id": "world_religions:81",
+      "subject": "world_religions",
+      "source_row": 81
+    },
+    {
+      "sample_id": "abstract_algebra:76",
+      "subject": "abstract_algebra",
+      "source_row": 76
+    },
+    {
+      "sample_id": "anatomy:110",
+      "subject": "anatomy",
+      "source_row": 110
+    },
+    {
+      "sample_id": "astronomy:35",
+      "subject": "astronomy",
+      "source_row": 35
+    },
+    {
+      "sample_id": "business_ethics:19",
+      "subject": "business_ethics",
+      "source_row": 19
+    },
+    {
+      "sample_id": "clinical_knowledge:240",
+      "subject": "clinical_knowledge",
+      "source_row": 240
+    },
+    {
+      "sample_id": "college_biology:123",
+      "subject": "college_biology",
+      "source_row": 123
+    },
+    {
+      "sample_id": "college_chemistry:75",
+      "subject": "college_chemistry",
+      "source_row": 75
+    },
+    {
+      "sample_id": "college_computer_science:48",
+      "subject": "college_computer_science",
+      "source_row": 48
+    },
+    {
+      "sample_id": "college_mathematics:76",
+      "subject": "college_mathematics",
+      "source_row": 76
+    },
+    {
+      "sample_id": "college_medicine:172",
+      "subject": "college_medicine",
+      "source_row": 172
+    },
+    {
+      "sample_id": "college_physics:65",
+      "subject": "college_physics",
+      "source_row": 65
+    },
+    {
+      "sample_id": "computer_security:76",
+      "subject": "computer_security",
+      "source_row": 76
+    },
+    {
+      "sample_id": "conceptual_physics:119",
+      "subject": "conceptual_physics",
+      "source_row": 119
+    },
+    {
+      "sample_id": "econometrics:92",
+      "subject": "econometrics",
+      "source_row": 92
+    },
+    {
+      "sample_id": "electrical_engineering:10",
+      "subject": "electrical_engineering",
+      "source_row": 10
+    },
+    {
+      "sample_id": "elementary_mathematics:254",
+      "subject": "elementary_mathematics",
+      "source_row": 254
+    },
+    {
+      "sample_id": "formal_logic:26",
+      "subject": "formal_logic",
+      "source_row": 26
+    },
+    {
+      "sample_id": "global_facts:69",
+      "subject": "global_facts",
+      "source_row": 69
+    },
+    {
+      "sample_id": "high_school_biology:260",
+      "subject": "high_school_biology",
+      "source_row": 260
+    },
+    {
+      "sample_id": "high_school_chemistry:17",
+      "subject": "high_school_chemistry",
+      "source_row": 17
+    },
+    {
+      "sample_id": "high_school_computer_science:42",
+      "subject": "high_school_computer_science",
+      "source_row": 42
+    },
+    {
+      "sample_id": "high_school_european_history:35",
+      "subject": "high_school_european_history",
+      "source_row": 35
+    },
+    {
+      "sample_id": "high_school_geography:186",
+      "subject": "high_school_geography",
+      "source_row": 186
+    },
+    {
+      "sample_id": "high_school_government_and_politics:162",
+      "subject": "high_school_government_and_politics",
+      "source_row": 162
+    },
+    {
+      "sample_id": "high_school_macroeconomics:38",
+      "subject": "high_school_macroeconomics",
+      "source_row": 38
+    },
+    {
+      "sample_id": "high_school_mathematics:268",
+      "subject": "high_school_mathematics",
+      "source_row": 268
+    },
+    {
+      "sample_id": "high_school_microeconomics:14",
+      "subject": "high_school_microeconomics",
+      "source_row": 14
+    },
+    {
+      "sample_id": "high_school_physics:145",
+      "subject": "high_school_physics",
+      "source_row": 145
+    },
+    {
+      "sample_id": "high_school_psychology:19",
+      "subject": "high_school_psychology",
+      "source_row": 19
+    },
+    {
+      "sample_id": "high_school_statistics:208",
+      "subject": "high_school_statistics",
+      "source_row": 208
+    },
+    {
+      "sample_id": "high_school_us_history:81",
+      "subject": "high_school_us_history",
+      "source_row": 81
+    },
+    {
+      "sample_id": "high_school_world_history:22",
+      "subject": "high_school_world_history",
+      "source_row": 22
+    },
+    {
+      "sample_id": "human_aging:26",
+      "subject": "human_aging",
+      "source_row": 26
+    },
+    {
+      "sample_id": "human_sexuality:34",
+      "subject": "human_sexuality",
+      "source_row": 34
+    },
+    {
+      "sample_id": "international_law:117",
+      "subject": "international_law",
+      "source_row": 117
+    },
+    {
+      "sample_id": "jurisprudence:52",
+      "subject": "jurisprudence",
+      "source_row": 52
+    },
+    {
+      "sample_id": "logical_fallacies:93",
+      "subject": "logical_fallacies",
+      "source_row": 93
+    },
+    {
+      "sample_id": "machine_learning:98",
+      "subject": "machine_learning",
+      "source_row": 98
+    },
+    {
+      "sample_id": "management:81",
+      "subject": "management",
+      "source_row": 81
+    },
+    {
+      "sample_id": "marketing:215",
+      "subject": "marketing",
+      "source_row": 215
+    },
+    {
+      "sample_id": "medical_genetics:39",
+      "subject": "medical_genetics",
+      "source_row": 39
+    },
+    {
+      "sample_id": "miscellaneous:428",
+      "subject": "miscellaneous",
+      "source_row": 428
+    },
+    {
+      "sample_id": "moral_disputes:241",
+      "subject": "moral_disputes",
+      "source_row": 241
+    },
+    {
+      "sample_id": "moral_scenarios:0",
+      "subject": "moral_scenarios",
+      "source_row": 0
+    },
+    {
+      "sample_id": "nutrition:216",
+      "subject": "nutrition",
+      "source_row": 216
+    },
+    {
+      "sample_id": "philosophy:70",
+      "subject": "philosophy",
+      "source_row": 70
+    },
+    {
+      "sample_id": "prehistory:203",
+      "subject": "prehistory",
+      "source_row": 203
+    },
+    {
+      "sample_id": "professional_accounting:139",
+      "subject": "professional_accounting",
+      "source_row": 139
+    },
+    {
+      "sample_id": "professional_law:308",
+      "subject": "professional_law",
+      "source_row": 308
+    },
+    {
+      "sample_id": "professional_medicine:117",
+      "subject": "professional_medicine",
+      "source_row": 117
+    },
+    {
+      "sample_id": "professional_psychology:89",
+      "subject": "professional_psychology",
+      "source_row": 89
+    },
+    {
+      "sample_id": "public_relations:93",
+      "subject": "public_relations",
+      "source_row": 93
+    },
+    {
+      "sample_id": "security_studies:160",
+      "subject": "security_studies",
+      "source_row": 160
+    },
+    {
+      "sample_id": "sociology:164",
+      "subject": "sociology",
+      "source_row": 164
+    },
+    {
+      "sample_id": "us_foreign_policy:41",
+      "subject": "us_foreign_policy",
+      "source_row": 41
+    },
+    {
+      "sample_id": "virology:147",
+      "subject": "virology",
+      "source_row": 147
+    },
+    {
+      "sample_id": "world_religions:41",
+      "subject": "world_religions",
+      "source_row": 41
+    },
+    {
+      "sample_id": "abstract_algebra:73",
+      "subject": "abstract_algebra",
+      "source_row": 73
+    },
+    {
+      "sample_id": "anatomy:93",
+      "subject": "anatomy",
+      "source_row": 93
+    },
+    {
+      "sample_id": "astronomy:8",
+      "subject": "astronomy",
+      "source_row": 8
+    },
+    {
+      "sample_id": "business_ethics:41",
+      "subject": "business_ethics",
+      "source_row": 41
+    },
+    {
+      "sample_id": "clinical_knowledge:86",
+      "subject": "clinical_knowledge",
+      "source_row": 86
+    },
+    {
+      "sample_id": "college_biology:48",
+      "subject": "college_biology",
+      "source_row": 48
+    },
+    {
+      "sample_id": "college_chemistry:70",
+      "subject": "college_chemistry",
+      "source_row": 70
+    },
+    {
+      "sample_id": "college_computer_science:95",
+      "subject": "college_computer_science",
+      "source_row": 95
+    },
+    {
+      "sample_id": "college_mathematics:51",
+      "subject": "college_mathematics",
+      "source_row": 51
+    },
+    {
+      "sample_id": "college_medicine:53",
+      "subject": "college_medicine",
+      "source_row": 53
+    },
+    {
+      "sample_id": "college_physics:90",
+      "subject": "college_physics",
+      "source_row": 90
+    },
+    {
+      "sample_id": "computer_security:70",
+      "subject": "computer_security",
+      "source_row": 70
+    },
+    {
+      "sample_id": "conceptual_physics:171",
+      "subject": "conceptual_physics",
+      "source_row": 171
+    },
+    {
+      "sample_id": "econometrics:102",
+      "subject": "econometrics",
+      "source_row": 102
+    },
+    {
+      "sample_id": "electrical_engineering:93",
+      "subject": "electrical_engineering",
+      "source_row": 93
+    },
+    {
+      "sample_id": "elementary_mathematics:78",
+      "subject": "elementary_mathematics",
+      "source_row": 78
+    },
+    {
+      "sample_id": "formal_logic:89",
+      "subject": "formal_logic",
+      "source_row": 89
+    },
+    {
+      "sample_id": "global_facts:87",
+      "subject": "global_facts",
+      "source_row": 87
+    },
+    {
+      "sample_id": "high_school_biology:103",
+      "subject": "high_school_biology",
+      "source_row": 103
+    },
+    {
+      "sample_id": "high_school_chemistry:147",
+      "subject": "high_school_chemistry",
+      "source_row": 147
+    },
+    {
+      "sample_id": "high_school_computer_science:6",
+      "subject": "high_school_computer_science",
+      "source_row": 6
+    },
+    {
+      "sample_id": "high_school_european_history:94",
+      "subject": "high_school_european_history",
+      "source_row": 94
+    },
+    {
+      "sample_id": "high_school_geography:124",
+      "subject": "high_school_geography",
+      "source_row": 124
+    },
+    {
+      "sample_id": "high_school_government_and_politics:94",
+      "subject": "high_school_government_and_politics",
+      "source_row": 94
+    },
+    {
+      "sample_id": "high_school_macroeconomics:100",
+      "subject": "high_school_macroeconomics",
+      "source_row": 100
+    },
+    {
+      "sample_id": "high_school_mathematics:86",
+      "subject": "high_school_mathematics",
+      "source_row": 86
+    },
+    {
+      "sample_id": "high_school_microeconomics:93",
+      "subject": "high_school_microeconomics",
+      "source_row": 93
+    },
+    {
+      "sample_id": "high_school_physics:38",
+      "subject": "high_school_physics",
+      "source_row": 38
+    },
+    {
+      "sample_id": "high_school_psychology:384",
+      "subject": "high_school_psychology",
+      "source_row": 384
+    },
+    {
+      "sample_id": "high_school_statistics:167",
+      "subject": "high_school_statistics",
+      "source_row": 167
+    },
+    {
+      "sample_id": "high_school_us_history:196",
+      "subject": "high_school_us_history",
+      "source_row": 196
+    },
+    {
+      "sample_id": "high_school_world_history:162",
+      "subject": "high_school_world_history",
+      "source_row": 162
+    },
+    {
+      "sample_id": "human_aging:145",
+      "subject": "human_aging",
+      "source_row": 145
+    },
+    {
+      "sample_id": "human_sexuality:113",
+      "subject": "human_sexuality",
+      "source_row": 113
+    },
+    {
+      "sample_id": "international_law:100",
+      "subject": "international_law",
+      "source_row": 100
+    },
+    {
+      "sample_id": "jurisprudence:23",
+      "subject": "jurisprudence",
+      "source_row": 23
+    },
+    {
+      "sample_id": "logical_fallacies:104",
+      "subject": "logical_fallacies",
+      "source_row": 104
+    },
+    {
+      "sample_id": "machine_learning:73",
+      "subject": "machine_learning",
+      "source_row": 73
+    },
+    {
+      "sample_id": "management:0",
+      "subject": "management",
+      "source_row": 0
+    },
+    {
+      "sample_id": "marketing:124",
+      "subject": "marketing",
+      "source_row": 124
+    },
+    {
+      "sample_id": "medical_genetics:51",
+      "subject": "medical_genetics",
+      "source_row": 51
+    },
+    {
+      "sample_id": "miscellaneous:459",
+      "subject": "miscellaneous",
+      "source_row": 459
+    },
+    {
+      "sample_id": "moral_disputes:255",
+      "subject": "moral_disputes",
+      "source_row": 255
+    },
+    {
+      "sample_id": "moral_scenarios:51",
+      "subject": "moral_scenarios",
+      "source_row": 51
+    },
+    {
+      "sample_id": "nutrition:101",
+      "subject": "nutrition",
+      "source_row": 101
+    },
+    {
+      "sample_id": "philosophy:122",
+      "subject": "philosophy",
+      "source_row": 122
+    },
+    {
+      "sample_id": "prehistory:233",
+      "subject": "prehistory",
+      "source_row": 233
+    },
+    {
+      "sample_id": "professional_accounting:134",
+      "subject": "professional_accounting",
+      "source_row": 134
+    },
+    {
+      "sample_id": "professional_law:553",
+      "subject": "professional_law",
+      "source_row": 553
+    },
+    {
+      "sample_id": "professional_medicine:74",
+      "subject": "professional_medicine",
+      "source_row": 74
+    },
+    {
+      "sample_id": "professional_psychology:287",
+      "subject": "professional_psychology",
+      "source_row": 287
+    },
+    {
+      "sample_id": "public_relations:107",
+      "subject": "public_relations",
+      "source_row": 107
+    },
+    {
+      "sample_id": "security_studies:134",
+      "subject": "security_studies",
+      "source_row": 134
+    },
+    {
+      "sample_id": "sociology:100",
+      "subject": "sociology",
+      "source_row": 100
+    },
+    {
+      "sample_id": "us_foreign_policy:94",
+      "subject": "us_foreign_policy",
+      "source_row": 94
+    },
+    {
+      "sample_id": "virology:56",
+      "subject": "virology",
+      "source_row": 56
+    },
+    {
+      "sample_id": "world_religions:24",
+      "subject": "world_religions",
+      "source_row": 24
+    },
+    {
+      "sample_id": "abstract_algebra:71",
+      "subject": "abstract_algebra",
+      "source_row": 71
+    },
+    {
+      "sample_id": "anatomy:126",
+      "subject": "anatomy",
+      "source_row": 126
+    },
+    {
+      "sample_id": "astronomy:133",
+      "subject": "astronomy",
+      "source_row": 133
+    },
+    {
+      "sample_id": "business_ethics:39",
+      "subject": "business_ethics",
+      "source_row": 39
+    },
+    {
+      "sample_id": "clinical_knowledge:135",
+      "subject": "clinical_knowledge",
+      "source_row": 135
+    },
+    {
+      "sample_id": "college_biology:39",
+      "subject": "college_biology",
+      "source_row": 39
+    },
+    {
+      "sample_id": "college_chemistry:54",
+      "subject": "college_chemistry",
+      "source_row": 54
+    },
+    {
+      "sample_id": "college_computer_science:52",
+      "subject": "college_computer_science",
+      "source_row": 52
+    },
+    {
+      "sample_id": "college_mathematics:95",
+      "subject": "college_mathematics",
+      "source_row": 95
+    },
+    {
+      "sample_id": "college_medicine:107",
+      "subject": "college_medicine",
+      "source_row": 107
+    },
+    {
+      "sample_id": "college_physics:38",
+      "subject": "college_physics",
+      "source_row": 38
+    },
+    {
+      "sample_id": "computer_security:98",
+      "subject": "computer_security",
+      "source_row": 98
+    },
+    {
+      "sample_id": "conceptual_physics:109",
+      "subject": "conceptual_physics",
+      "source_row": 109
+    },
+    {
+      "sample_id": "econometrics:51",
+      "subject": "econometrics",
+      "source_row": 51
+    },
+    {
+      "sample_id": "electrical_engineering:118",
+      "subject": "electrical_engineering",
+      "source_row": 118
+    },
+    {
+      "sample_id": "elementary_mathematics:100",
+      "subject": "elementary_mathematics",
+      "source_row": 100
+    },
+    {
+      "sample_id": "formal_logic:27",
+      "subject": "formal_logic",
+      "source_row": 27
+    },
+    {
+      "sample_id": "global_facts:67",
+      "subject": "global_facts",
+      "source_row": 67
+    },
+    {
+      "sample_id": "high_school_biology:274",
+      "subject": "high_school_biology",
+      "source_row": 274
+    },
+    {
+      "sample_id": "high_school_chemistry:194",
+      "subject": "high_school_chemistry",
+      "source_row": 194
+    },
+    {
+      "sample_id": "high_school_computer_science:24",
+      "subject": "high_school_computer_science",
+      "source_row": 24
+    },
+    {
+      "sample_id": "high_school_european_history:49",
+      "subject": "high_school_european_history",
+      "source_row": 49
+    },
+    {
+      "sample_id": "high_school_geography:173",
+      "subject": "high_school_geography",
+      "source_row": 173
+    },
+    {
+      "sample_id": "high_school_government_and_politics:179",
+      "subject": "high_school_government_and_politics",
+      "source_row": 179
+    },
+    {
+      "sample_id": "high_school_macroeconomics:327",
+      "subject": "high_school_macroeconomics",
+      "source_row": 327
+    },
+    {
+      "sample_id": "high_school_mathematics:241",
+      "subject": "high_school_mathematics",
+      "source_row": 241
+    },
+    {
+      "sample_id": "high_school_microeconomics:38",
+      "subject": "high_school_microeconomics",
+      "source_row": 38
+    },
+    {
+      "sample_id": "high_school_physics:105",
+      "subject": "high_school_physics",
+      "source_row": 105
+    },
+    {
+      "sample_id": "high_school_psychology:269",
+      "subject": "high_school_psychology",
+      "source_row": 269
+    },
+    {
+      "sample_id": "high_school_statistics:61",
+      "subject": "high_school_statistics",
+      "source_row": 61
+    },
+    {
+      "sample_id": "high_school_us_history:14",
+      "subject": "high_school_us_history",
+      "source_row": 14
+    },
+    {
+      "sample_id": "high_school_world_history:160",
+      "subject": "high_school_world_history",
+      "source_row": 160
+    },
+    {
+      "sample_id": "human_aging:151",
+      "subject": "human_aging",
+      "source_row": 151
+    },
+    {
+      "sample_id": "human_sexuality:15",
+      "subject": "human_sexuality",
+      "source_row": 15
+    },
+    {
+      "sample_id": "international_law:48",
+      "subject": "international_law",
+      "source_row": 48
+    },
+    {
+      "sample_id": "jurisprudence:67",
+      "subject": "jurisprudence",
+      "source_row": 67
+    },
+    {
+      "sample_id": "logical_fallacies:52",
+      "subject": "logical_fallacies",
+      "source_row": 52
+    },
+    {
+      "sample_id": "machine_learning:40",
+      "subject": "machine_learning",
+      "source_row": 40
+    },
+    {
+      "sample_id": "management:50",
+      "subject": "management",
+      "source_row": 50
+    },
+    {
+      "sample_id": "marketing:143",
+      "subject": "marketing",
+      "source_row": 143
+    },
+    {
+      "sample_id": "medical_genetics:60",
+      "subject": "medical_genetics",
+      "source_row": 60
+    },
+    {
+      "sample_id": "miscellaneous:575",
+      "subject": "miscellaneous",
+      "source_row": 575
+    },
+    {
+      "sample_id": "moral_disputes:78",
+      "subject": "moral_disputes",
+      "source_row": 78
+    },
+    {
+      "sample_id": "moral_scenarios:63",
+      "subject": "moral_scenarios",
+      "source_row": 63
+    },
+    {
+      "sample_id": "nutrition:71",
+      "subject": "nutrition",
+      "source_row": 71
+    },
+    {
+      "sample_id": "philosophy:279",
+      "subject": "philosophy",
+      "source_row": 279
+    },
+    {
+      "sample_id": "prehistory:66",
+      "subject": "prehistory",
+      "source_row": 66
+    },
+    {
+      "sample_id": "professional_accounting:70",
+      "subject": "professional_accounting",
+      "source_row": 70
+    },
+    {
+      "sample_id": "professional_law:1382",
+      "subject": "professional_law",
+      "source_row": 1382
+    },
+    {
+      "sample_id": "professional_medicine:184",
+      "subject": "professional_medicine",
+      "source_row": 184
+    },
+    {
+      "sample_id": "professional_psychology:91",
+      "subject": "professional_psychology",
+      "source_row": 91
+    },
+    {
+      "sample_id": "public_relations:17",
+      "subject": "public_relations",
+      "source_row": 17
+    },
+    {
+      "sample_id": "security_studies:85",
+      "subject": "security_studies",
+      "source_row": 85
+    },
+    {
+      "sample_id": "sociology:161",
+      "subject": "sociology",
+      "source_row": 161
+    },
+    {
+      "sample_id": "us_foreign_policy:4",
+      "subject": "us_foreign_policy",
+      "source_row": 4
+    },
+    {
+      "sample_id": "virology:86",
+      "subject": "virology",
+      "source_row": 86
+    },
+    {
+      "sample_id": "world_religions:146",
+      "subject": "world_religions",
+      "source_row": 146
+    },
+    {
+      "sample_id": "abstract_algebra:95",
+      "subject": "abstract_algebra",
+      "source_row": 95
+    },
+    {
+      "sample_id": "anatomy:115",
+      "subject": "anatomy",
+      "source_row": 115
+    },
+    {
+      "sample_id": "astronomy:108",
+      "subject": "astronomy",
+      "source_row": 108
+    },
+    {
+      "sample_id": "business_ethics:18",
+      "subject": "business_ethics",
+      "source_row": 18
+    },
+    {
+      "sample_id": "clinical_knowledge:217",
+      "subject": "clinical_knowledge",
+      "source_row": 217
+    },
+    {
+      "sample_id": "college_biology:97",
+      "subject": "college_biology",
+      "source_row": 97
+    },
+    {
+      "sample_id": "college_chemistry:68",
+      "subject": "college_chemistry",
+      "source_row": 68
+    },
+    {
+      "sample_id": "college_computer_science:75",
+      "subject": "college_computer_science",
+      "source_row": 75
+    },
+    {
+      "sample_id": "college_mathematics:57",
+      "subject": "college_mathematics",
+      "source_row": 57
+    },
+    {
+      "sample_id": "college_medicine:161",
+      "subject": "college_medicine",
+      "source_row": 161
+    },
+    {
+      "sample_id": "college_physics:26",
+      "subject": "college_physics",
+      "source_row": 26
+    },
+    {
+      "sample_id": "computer_security:65",
+      "subject": "computer_security",
+      "source_row": 65
+    },
+    {
+      "sample_id": "conceptual_physics:105",
+      "subject": "conceptual_physics",
+      "source_row": 105
+    },
+    {
+      "sample_id": "econometrics:27",
+      "subject": "econometrics",
+      "source_row": 27
+    },
+    {
+      "sample_id": "electrical_engineering:88",
+      "subject": "electrical_engineering",
+      "source_row": 88
+    },
+    {
+      "sample_id": "elementary_mathematics:156",
+      "subject": "elementary_mathematics",
+      "source_row": 156
+    },
+    {
+      "sample_id": "formal_logic:31",
+      "subject": "formal_logic",
+      "source_row": 31
+    },
+    {
+      "sample_id": "global_facts:37",
+      "subject": "global_facts",
+      "source_row": 37
+    },
+    {
+      "sample_id": "high_school_biology:136",
+      "subject": "high_school_biology",
+      "source_row": 136
+    },
+    {
+      "sample_id": "high_school_chemistry:24",
+      "subject": "high_school_chemistry",
+      "source_row": 24
+    },
+    {
+      "sample_id": "high_school_computer_science:30",
+      "subject": "high_school_computer_science",
+      "source_row": 30
+    },
+    {
+      "sample_id": "high_school_european_history:40",
+      "subject": "high_school_european_history",
+      "source_row": 40
+    },
+    {
+      "sample_id": "high_school_geography:69",
+      "subject": "high_school_geography",
+      "source_row": 69
+    },
+    {
+      "sample_id": "high_school_government_and_politics:148",
+      "subject": "high_school_government_and_politics",
+      "source_row": 148
+    },
+    {
+      "sample_id": "high_school_macroeconomics:209",
+      "subject": "high_school_macroeconomics",
+      "source_row": 209
+    },
+    {
+      "sample_id": "high_school_mathematics:99",
+      "subject": "high_school_mathematics",
+      "source_row": 99
+    },
+    {
+      "sample_id": "high_school_microeconomics:56",
+      "subject": "high_school_microeconomics",
+      "source_row": 56
+    },
+    {
+      "sample_id": "high_school_physics:52",
+      "subject": "high_school_physics",
+      "source_row": 52
+    },
+    {
+      "sample_id": "high_school_psychology:180",
+      "subject": "high_school_psychology",
+      "source_row": 180
+    },
+    {
+      "sample_id": "high_school_statistics:158",
+      "subject": "high_school_statistics",
+      "source_row": 158
+    },
+    {
+      "sample_id": "high_school_us_history:91",
+      "subject": "high_school_us_history",
+      "source_row": 91
+    },
+    {
+      "sample_id": "high_school_world_history:229",
+      "subject": "high_school_world_history",
+      "source_row": 229
+    },
+    {
+      "sample_id": "human_aging:71",
+      "subject": "human_aging",
+      "source_row": 71
+    },
+    {
+      "sample_id": "human_sexuality:9",
+      "subject": "human_sexuality",
+      "source_row": 9
+    },
+    {
+      "sample_id": "international_law:67",
+      "subject": "international_law",
+      "source_row": 67
+    },
+    {
+      "sample_id": "jurisprudence:88",
+      "subject": "jurisprudence",
+      "source_row": 88
+    },
+    {
+      "sample_id": "logical_fallacies:108",
+      "subject": "logical_fallacies",
+      "source_row": 108
+    },
+    {
+      "sample_id": "machine_learning:85",
+      "subject": "machine_learning",
+      "source_row": 85
+    },
+    {
+      "sample_id": "management:36",
+      "subject": "management",
+      "source_row": 36
+    },
+    {
+      "sample_id": "marketing:112",
+      "subject": "marketing",
+      "source_row": 112
+    },
+    {
+      "sample_id": "medical_genetics:15",
+      "subject": "medical_genetics",
+      "source_row": 15
+    },
+    {
+      "sample_id": "miscellaneous:425",
+      "subject": "miscellaneous",
+      "source_row": 425
+    },
+    {
+      "sample_id": "moral_disputes:338",
+      "subject": "moral_disputes",
+      "source_row": 338
+    },
+    {
+      "sample_id": "moral_scenarios:523",
+      "subject": "moral_scenarios",
+      "source_row": 523
+    },
+    {
+      "sample_id": "nutrition:170",
+      "subject": "nutrition",
+      "source_row": 170
+    },
+    {
+      "sample_id": "philosophy:192",
+      "subject": "philosophy",
+      "source_row": 192
+    },
+    {
+      "sample_id": "prehistory:266",
+      "subject": "prehistory",
+      "source_row": 266
+    },
+    {
+      "sample_id": "professional_accounting:146",
+      "subject": "professional_accounting",
+      "source_row": 146
+    },
+    {
+      "sample_id": "professional_law:780",
+      "subject": "professional_law",
+      "source_row": 780
+    },
+    {
+      "sample_id": "professional_medicine:144",
+      "subject": "professional_medicine",
+      "source_row": 144
+    },
+    {
+      "sample_id": "professional_psychology:161",
+      "subject": "professional_psychology",
+      "source_row": 161
+    },
+    {
+      "sample_id": "public_relations:91",
+      "subject": "public_relations",
+      "source_row": 91
+    },
+    {
+      "sample_id": "security_studies:15",
+      "subject": "security_studies",
+      "source_row": 15
+    },
+    {
+      "sample_id": "sociology:46",
+      "subject": "sociology",
+      "source_row": 46
+    },
+    {
+      "sample_id": "us_foreign_policy:9",
+      "subject": "us_foreign_policy",
+      "source_row": 9
+    },
+    {
+      "sample_id": "virology:107",
+      "subject": "virology",
+      "source_row": 107
+    },
+    {
+      "sample_id": "world_religions:35",
+      "subject": "world_religions",
+      "source_row": 35
+    },
+    {
+      "sample_id": "abstract_algebra:22",
+      "subject": "abstract_algebra",
+      "source_row": 22
+    },
+    {
+      "sample_id": "anatomy:25",
+      "subject": "anatomy",
+      "source_row": 25
+    },
+    {
+      "sample_id": "astronomy:41",
+      "subject": "astronomy",
+      "source_row": 41
+    },
+    {
+      "sample_id": "business_ethics:29",
+      "subject": "business_ethics",
+      "source_row": 29
+    },
+    {
+      "sample_id": "clinical_knowledge:251",
+      "subject": "clinical_knowledge",
+      "source_row": 251
+    },
+    {
+      "sample_id": "college_biology:67",
+      "subject": "college_biology",
+      "source_row": 67
+    },
+    {
+      "sample_id": "college_chemistry:49",
+      "subject": "college_chemistry",
+      "source_row": 49
+    },
+    {
+      "sample_id": "college_computer_science:56",
+      "subject": "college_computer_science",
+      "source_row": 56
+    },
+    {
+      "sample_id": "college_mathematics:1",
+      "subject": "college_mathematics",
+      "source_row": 1
+    },
+    {
+      "sample_id": "college_medicine:88",
+      "subject": "college_medicine",
+      "source_row": 88
+    },
+    {
+      "sample_id": "college_physics:85",
+      "subject": "college_physics",
+      "source_row": 85
+    },
+    {
+      "sample_id": "computer_security:23",
+      "subject": "computer_security",
+      "source_row": 23
+    },
+    {
+      "sample_id": "conceptual_physics:36",
+      "subject": "conceptual_physics",
+      "source_row": 36
+    },
+    {
+      "sample_id": "econometrics:16",
+      "subject": "econometrics",
+      "source_row": 16
+    },
+    {
+      "sample_id": "electrical_engineering:84",
+      "subject": "electrical_engineering",
+      "source_row": 84
+    },
+    {
+      "sample_id": "elementary_mathematics:76",
+      "subject": "elementary_mathematics",
+      "source_row": 76
+    },
+    {
+      "sample_id": "formal_logic:101",
+      "subject": "formal_logic",
+      "source_row": 101
+    },
+    {
+      "sample_id": "global_facts:68",
+      "subject": "global_facts",
+      "source_row": 68
+    },
+    {
+      "sample_id": "high_school_biology:44",
+      "subject": "high_school_biology",
+      "source_row": 44
+    },
+    {
+      "sample_id": "high_school_chemistry:0",
+      "subject": "high_school_chemistry",
+      "source_row": 0
+    },
+    {
+      "sample_id": "high_school_computer_science:20",
+      "subject": "high_school_computer_science",
+      "source_row": 20
+    },
+    {
+      "sample_id": "high_school_european_history:48",
+      "subject": "high_school_european_history",
+      "source_row": 48
+    },
+    {
+      "sample_id": "high_school_geography:76",
+      "subject": "high_school_geography",
+      "source_row": 76
+    },
+    {
+      "sample_id": "high_school_government_and_politics:81",
+      "subject": "high_school_government_and_politics",
+      "source_row": 81
+    },
+    {
+      "sample_id": "high_school_macroeconomics:227",
+      "subject": "high_school_macroeconomics",
+      "source_row": 227
+    },
+    {
+      "sample_id": "high_school_mathematics:79",
+      "subject": "high_school_mathematics",
+      "source_row": 79
+    },
+    {
+      "sample_id": "high_school_microeconomics:209",
+      "subject": "high_school_microeconomics",
+      "source_row": 209
+    },
+    {
+      "sample_id": "high_school_physics:17",
+      "subject": "high_school_physics",
+      "source_row": 17
+    },
+    {
+      "sample_id": "high_school_psychology:189",
+      "subject": "high_school_psychology",
+      "source_row": 189
+    },
+    {
+      "sample_id": "high_school_statistics:98",
+      "subject": "high_school_statistics",
+      "source_row": 98
+    },
+    {
+      "sample_id": "high_school_us_history:71",
+      "subject": "high_school_us_history",
+      "source_row": 71
+    },
+    {
+      "sample_id": "high_school_world_history:105",
+      "subject": "high_school_world_history",
+      "source_row": 105
+    },
+    {
+      "sample_id": "human_aging:188",
+      "subject": "human_aging",
+      "source_row": 188
+    },
+    {
+      "sample_id": "human_sexuality:30",
+      "subject": "human_sexuality",
+      "source_row": 30
+    },
+    {
+      "sample_id": "international_law:0",
+      "subject": "international_law",
+      "source_row": 0
+    },
+    {
+      "sample_id": "jurisprudence:93",
+      "subject": "jurisprudence",
+      "source_row": 93
+    },
+    {
+      "sample_id": "logical_fallacies:84",
+      "subject": "logical_fallacies",
+      "source_row": 84
+    },
+    {
+      "sample_id": "machine_learning:68",
+      "subject": "machine_learning",
+      "source_row": 68
+    },
+    {
+      "sample_id": "management:78",
+      "subject": "management",
+      "source_row": 78
+    },
+    {
+      "sample_id": "marketing:222",
+      "subject": "marketing",
+      "source_row": 222
+    },
+    {
+      "sample_id": "medical_genetics:93",
+      "subject": "medical_genetics",
+      "source_row": 93
+    },
+    {
+      "sample_id": "miscellaneous:288",
+      "subject": "miscellaneous",
+      "source_row": 288
+    },
+    {
+      "sample_id": "moral_disputes:27",
+      "subject": "moral_disputes",
+      "source_row": 27
+    },
+    {
+      "sample_id": "moral_scenarios:788",
+      "subject": "moral_scenarios",
+      "source_row": 788
+    },
+    {
+      "sample_id": "nutrition:238",
+      "subject": "nutrition",
+      "source_row": 238
+    },
+    {
+      "sample_id": "philosophy:23",
+      "subject": "philosophy",
+      "source_row": 23
+    },
+    {
+      "sample_id": "prehistory:250",
+      "subject": "prehistory",
+      "source_row": 250
+    },
+    {
+      "sample_id": "professional_accounting:100",
+      "subject": "professional_accounting",
+      "source_row": 100
+    },
+    {
+      "sample_id": "professional_law:1368",
+      "subject": "professional_law",
+      "source_row": 1368
+    },
+    {
+      "sample_id": "professional_medicine:37",
+      "subject": "professional_medicine",
+      "source_row": 37
+    },
+    {
+      "sample_id": "professional_psychology:84",
+      "subject": "professional_psychology",
+      "source_row": 84
+    },
+    {
+      "sample_id": "public_relations:79",
+      "subject": "public_relations",
+      "source_row": 79
+    },
+    {
+      "sample_id": "security_studies:22",
+      "subject": "security_studies",
+      "source_row": 22
+    },
+    {
+      "sample_id": "sociology:144",
+      "subject": "sociology",
+      "source_row": 144
+    },
+    {
+      "sample_id": "us_foreign_policy:72",
+      "subject": "us_foreign_policy",
+      "source_row": 72
+    },
+    {
+      "sample_id": "virology:104",
+      "subject": "virology",
+      "source_row": 104
+    },
+    {
+      "sample_id": "world_religions:79",
+      "subject": "world_religions",
+      "source_row": 79
+    },
+    {
+      "sample_id": "abstract_algebra:23",
+      "subject": "abstract_algebra",
+      "source_row": 23
+    },
+    {
+      "sample_id": "anatomy:59",
+      "subject": "anatomy",
+      "source_row": 59
+    },
+    {
+      "sample_id": "astronomy:95",
+      "subject": "astronomy",
+      "source_row": 95
+    },
+    {
+      "sample_id": "business_ethics:20",
+      "subject": "business_ethics",
+      "source_row": 20
+    },
+    {
+      "sample_id": "clinical_knowledge:149",
+      "subject": "clinical_knowledge",
+      "source_row": 149
+    },
+    {
+      "sample_id": "college_biology:135",
+      "subject": "college_biology",
+      "source_row": 135
+    },
+    {
+      "sample_id": "college_chemistry:33",
+      "subject": "college_chemistry",
+      "source_row": 33
+    },
+    {
+      "sample_id": "college_computer_science:50",
+      "subject": "college_computer_science",
+      "source_row": 50
+    },
+    {
+      "sample_id": "college_mathematics:53",
+      "subject": "college_mathematics",
+      "source_row": 53
+    },
+    {
+      "sample_id": "college_medicine:119",
+      "subject": "college_medicine",
+      "source_row": 119
+    },
+    {
+      "sample_id": "college_physics:36",
+      "subject": "college_physics",
+      "source_row": 36
+    },
+    {
+      "sample_id": "computer_security:82",
+      "subject": "computer_security",
+      "source_row": 82
+    },
+    {
+      "sample_id": "conceptual_physics:185",
+      "subject": "conceptual_physics",
+      "source_row": 185
+    },
+    {
+      "sample_id": "econometrics:105",
+      "subject": "econometrics",
+      "source_row": 105
+    },
+    {
+      "sample_id": "electrical_engineering:103",
+      "subject": "electrical_engineering",
+      "source_row": 103
+    },
+    {
+      "sample_id": "elementary_mathematics:32",
+      "subject": "elementary_mathematics",
+      "source_row": 32
+    },
+    {
+      "sample_id": "formal_logic:39",
+      "subject": "formal_logic",
+      "source_row": 39
+    },
+    {
+      "sample_id": "global_facts:63",
+      "subject": "global_facts",
+      "source_row": 63
+    },
+    {
+      "sample_id": "high_school_biology:32",
+      "subject": "high_school_biology",
+      "source_row": 32
+    },
+    {
+      "sample_id": "high_school_chemistry:114",
+      "subject": "high_school_chemistry",
+      "source_row": 114
+    },
+    {
+      "sample_id": "high_school_computer_science:10",
+      "subject": "high_school_computer_science",
+      "source_row": 10
+    },
+    {
+      "sample_id": "high_school_european_history:121",
+      "subject": "high_school_european_history",
+      "source_row": 121
+    },
+    {
+      "sample_id": "high_school_geography:44",
+      "subject": "high_school_geography",
+      "source_row": 44
+    },
+    {
+      "sample_id": "high_school_government_and_politics:79",
+      "subject": "high_school_government_and_politics",
+      "source_row": 79
+    },
+    {
+      "sample_id": "high_school_macroeconomics:189",
+      "subject": "high_school_macroeconomics",
+      "source_row": 189
+    },
+    {
+      "sample_id": "high_school_mathematics:42",
+      "subject": "high_school_mathematics",
+      "source_row": 42
+    },
+    {
+      "sample_id": "high_school_microeconomics:86",
+      "subject": "high_school_microeconomics",
+      "source_row": 86
+    },
+    {
+      "sample_id": "high_school_physics:11",
+      "subject": "high_school_physics",
+      "source_row": 11
+    },
+    {
+      "sample_id": "high_school_psychology:106",
+      "subject": "high_school_psychology",
+      "source_row": 106
+    },
+    {
+      "sample_id": "high_school_statistics:118",
+      "subject": "high_school_statistics",
+      "source_row": 118
+    },
+    {
+      "sample_id": "high_school_us_history:125",
+      "subject": "high_school_us_history",
+      "source_row": 125
+    },
+    {
+      "sample_id": "high_school_world_history:170",
+      "subject": "high_school_world_history",
+      "source_row": 170
+    },
+    {
+      "sample_id": "human_aging:124",
+      "subject": "human_aging",
+      "source_row": 124
+    },
+    {
+      "sample_id": "human_sexuality:51",
+      "subject": "human_sexuality",
+      "source_row": 51
+    },
+    {
+      "sample_id": "international_law:4",
+      "subject": "international_law",
+      "source_row": 4
+    },
+    {
+      "sample_id": "jurisprudence:34",
+      "subject": "jurisprudence",
+      "source_row": 34
+    },
+    {
+      "sample_id": "logical_fallacies:115",
+      "subject": "logical_fallacies",
+      "source_row": 115
+    },
+    {
+      "sample_id": "machine_learning:75",
+      "subject": "machine_learning",
+      "source_row": 75
+    },
+    {
+      "sample_id": "management:26",
+      "subject": "management",
+      "source_row": 26
+    },
+    {
+      "sample_id": "marketing:18",
+      "subject": "marketing",
+      "source_row": 18
+    },
+    {
+      "sample_id": "medical_genetics:10",
+      "subject": "medical_genetics",
+      "source_row": 10
+    },
+    {
+      "sample_id": "miscellaneous:444",
+      "subject": "miscellaneous",
+      "source_row": 444
+    },
+    {
+      "sample_id": "moral_disputes:122",
+      "subject": "moral_disputes",
+      "source_row": 122
+    },
+    {
+      "sample_id": "moral_scenarios:130",
+      "subject": "moral_scenarios",
+      "source_row": 130
+    },
+    {
+      "sample_id": "nutrition:81",
+      "subject": "nutrition",
+      "source_row": 81
+    },
+    {
+      "sample_id": "philosophy:270",
+      "subject": "philosophy",
+      "source_row": 270
+    },
+    {
+      "sample_id": "prehistory:255",
+      "subject": "prehistory",
+      "source_row": 255
+    },
+    {
+      "sample_id": "professional_accounting:94",
+      "subject": "professional_accounting",
+      "source_row": 94
+    },
+    {
+      "sample_id": "professional_law:381",
+      "subject": "professional_law",
+      "source_row": 381
+    },
+    {
+      "sample_id": "professional_medicine:84",
+      "subject": "professional_medicine",
+      "source_row": 84
+    },
+    {
+      "sample_id": "professional_psychology:500",
+      "subject": "professional_psychology",
+      "source_row": 500
+    },
+    {
+      "sample_id": "public_relations:101",
+      "subject": "public_relations",
+      "source_row": 101
+    },
+    {
+      "sample_id": "security_studies:231",
+      "subject": "security_studies",
+      "source_row": 231
+    },
+    {
+      "sample_id": "sociology:53",
+      "subject": "sociology",
+      "source_row": 53
+    },
+    {
+      "sample_id": "us_foreign_policy:6",
+      "subject": "us_foreign_policy",
+      "source_row": 6
+    },
+    {
+      "sample_id": "virology:124",
+      "subject": "virology",
+      "source_row": 124
+    },
+    {
+      "sample_id": "world_religions:116",
+      "subject": "world_religions",
+      "source_row": 116
+    },
+    {
+      "sample_id": "abstract_algebra:29",
+      "subject": "abstract_algebra",
+      "source_row": 29
+    },
+    {
+      "sample_id": "anatomy:74",
+      "subject": "anatomy",
+      "source_row": 74
+    },
+    {
+      "sample_id": "astronomy:23",
+      "subject": "astronomy",
+      "source_row": 23
+    },
+    {
+      "sample_id": "business_ethics:36",
+      "subject": "business_ethics",
+      "source_row": 36
+    },
+    {
+      "sample_id": "clinical_knowledge:36",
+      "subject": "clinical_knowledge",
+      "source_row": 36
+    },
+    {
+      "sample_id": "college_biology:103",
+      "subject": "college_biology",
+      "source_row": 103
+    },
+    {
+      "sample_id": "college_chemistry:64",
+      "subject": "college_chemistry",
+      "source_row": 64
+    },
+    {
+      "sample_id": "college_computer_science:22",
+      "subject": "college_computer_science",
+      "source_row": 22
+    },
+    {
+      "sample_id": "college_mathematics:54",
+      "subject": "college_mathematics",
+      "source_row": 54
+    },
+    {
+      "sample_id": "college_medicine:94",
+      "subject": "college_medicine",
+      "source_row": 94
+    },
+    {
+      "sample_id": "college_physics:40",
+      "subject": "college_physics",
+      "source_row": 40
+    },
+    {
+      "sample_id": "computer_security:88",
+      "subject": "computer_security",
+      "source_row": 88
+    },
+    {
+      "sample_id": "conceptual_physics:147",
+      "subject": "conceptual_physics",
+      "source_row": 147
+    },
+    {
+      "sample_id": "econometrics:9",
+      "subject": "econometrics",
+      "source_row": 9
+    },
+    {
+      "sample_id": "electrical_engineering:117",
+      "subject": "electrical_engineering",
+      "source_row": 117
+    },
+    {
+      "sample_id": "elementary_mathematics:111",
+      "subject": "elementary_mathematics",
+      "source_row": 111
+    },
+    {
+      "sample_id": "formal_logic:109",
+      "subject": "formal_logic",
+      "source_row": 109
+    },
+    {
+      "sample_id": "global_facts:8",
+      "subject": "global_facts",
+      "source_row": 8
+    },
+    {
+      "sample_id": "high_school_biology:151",
+      "subject": "high_school_biology",
+      "source_row": 151
+    },
+    {
+      "sample_id": "high_school_chemistry:135",
+      "subject": "high_school_chemistry",
+      "source_row": 135
+    },
+    {
+      "sample_id": "high_school_computer_science:71",
+      "subject": "high_school_computer_science",
+      "source_row": 71
+    },
+    {
+      "sample_id": "high_school_european_history:31",
+      "subject": "high_school_european_history",
+      "source_row": 31
+    },
+    {
+      "sample_id": "high_school_geography:83",
+      "subject": "high_school_geography",
+      "source_row": 83
+    },
+    {
+      "sample_id": "high_school_government_and_politics:127",
+      "subject": "high_school_government_and_politics",
+      "source_row": 127
+    },
+    {
+      "sample_id": "high_school_macroeconomics:166",
+      "subject": "high_school_macroeconomics",
+      "source_row": 166
+    },
+    {
+      "sample_id": "high_school_mathematics:83",
+      "subject": "high_school_mathematics",
+      "source_row": 83
+    },
+    {
+      "sample_id": "high_school_microeconomics:190",
+      "subject": "high_school_microeconomics",
+      "source_row": 190
+    },
+    {
+      "sample_id": "high_school_physics:121",
+      "subject": "high_school_physics",
+      "source_row": 121
+    },
+    {
+      "sample_id": "high_school_psychology:51",
+      "subject": "high_school_psychology",
+      "source_row": 51
+    },
+    {
+      "sample_id": "high_school_statistics:95",
+      "subject": "high_school_statistics",
+      "source_row": 95
+    },
+    {
+      "sample_id": "high_school_us_history:32",
+      "subject": "high_school_us_history",
+      "source_row": 32
+    },
+    {
+      "sample_id": "high_school_world_history:110",
+      "subject": "high_school_world_history",
+      "source_row": 110
+    },
+    {
+      "sample_id": "human_aging:16",
+      "subject": "human_aging",
+      "source_row": 16
+    },
+    {
+      "sample_id": "human_sexuality:35",
+      "subject": "human_sexuality",
+      "source_row": 35
+    },
+    {
+      "sample_id": "international_law:32",
+      "subject": "international_law",
+      "source_row": 32
+    },
+    {
+      "sample_id": "jurisprudence:69",
+      "subject": "jurisprudence",
+      "source_row": 69
+    },
+    {
+      "sample_id": "logical_fallacies:43",
+      "subject": "logical_fallacies",
+      "source_row": 43
+    },
+    {
+      "sample_id": "machine_learning:27",
+      "subject": "machine_learning",
+      "source_row": 27
+    },
+    {
+      "sample_id": "management:65",
+      "subject": "management",
+      "source_row": 65
+    },
+    {
+      "sample_id": "marketing:99",
+      "subject": "marketing",
+      "source_row": 99
+    },
+    {
+      "sample_id": "medical_genetics:79",
+      "subject": "medical_genetics",
+      "source_row": 79
+    },
+    {
+      "sample_id": "miscellaneous:16",
+      "subject": "miscellaneous",
+      "source_row": 16
+    },
+    {
+      "sample_id": "moral_disputes:229",
+      "subject": "moral_disputes",
+      "source_row": 229
+    },
+    {
+      "sample_id": "moral_scenarios:646",
+      "subject": "moral_scenarios",
+      "source_row": 646
+    },
+    {
+      "sample_id": "nutrition:260",
+      "subject": "nutrition",
+      "source_row": 260
+    },
+    {
+      "sample_id": "philosophy:127",
+      "subject": "philosophy",
+      "source_row": 127
+    },
+    {
+      "sample_id": "prehistory:241",
+      "subject": "prehistory",
+      "source_row": 241
+    },
+    {
+      "sample_id": "professional_accounting:38",
+      "subject": "professional_accounting",
+      "source_row": 38
+    },
+    {
+      "sample_id": "professional_law:1409",
+      "subject": "professional_law",
+      "source_row": 1409
+    },
+    {
+      "sample_id": "professional_medicine:29",
+      "subject": "professional_medicine",
+      "source_row": 29
+    },
+    {
+      "sample_id": "professional_psychology:340",
+      "subject": "professional_psychology",
+      "source_row": 340
+    },
+    {
+      "sample_id": "public_relations:52",
+      "subject": "public_relations",
+      "source_row": 52
+    },
+    {
+      "sample_id": "security_studies:175",
+      "subject": "security_studies",
+      "source_row": 175
+    },
+    {
+      "sample_id": "sociology:62",
+      "subject": "sociology",
+      "source_row": 62
+    },
+    {
+      "sample_id": "us_foreign_policy:86",
+      "subject": "us_foreign_policy",
+      "source_row": 86
+    },
+    {
+      "sample_id": "virology:155",
+      "subject": "virology",
+      "source_row": 155
+    },
+    {
+      "sample_id": "world_religions:117",
+      "subject": "world_religions",
+      "source_row": 117
+    },
+    {
+      "sample_id": "abstract_algebra:21",
+      "subject": "abstract_algebra",
+      "source_row": 21
+    },
+    {
+      "sample_id": "anatomy:10",
+      "subject": "anatomy",
+      "source_row": 10
+    },
+    {
+      "sample_id": "astronomy:117",
+      "subject": "astronomy",
+      "source_row": 117
+    },
+    {
+      "sample_id": "business_ethics:27",
+      "subject": "business_ethics",
+      "source_row": 27
+    },
+    {
+      "sample_id": "clinical_knowledge:154",
+      "subject": "clinical_knowledge",
+      "source_row": 154
+    },
+    {
+      "sample_id": "college_biology:94",
+      "subject": "college_biology",
+      "source_row": 94
+    },
+    {
+      "sample_id": "college_chemistry:12",
+      "subject": "college_chemistry",
+      "source_row": 12
+    },
+    {
+      "sample_id": "college_computer_science:89",
+      "subject": "college_computer_science",
+      "source_row": 89
+    },
+    {
+      "sample_id": "college_mathematics:69",
+      "subject": "college_mathematics",
+      "source_row": 69
+    },
+    {
+      "sample_id": "college_medicine:19",
+      "subject": "college_medicine",
+      "source_row": 19
+    },
+    {
+      "sample_id": "college_physics:72",
+      "subject": "college_physics",
+      "source_row": 72
+    },
+    {
+      "sample_id": "computer_security:50",
+      "subject": "computer_security",
+      "source_row": 50
+    },
+    {
+      "sample_id": "conceptual_physics:70",
+      "subject": "conceptual_physics",
+      "source_row": 70
+    },
+    {
+      "sample_id": "econometrics:74",
+      "subject": "econometrics",
+      "source_row": 74
+    },
+    {
+      "sample_id": "electrical_engineering:44",
+      "subject": "electrical_engineering",
+      "source_row": 44
+    },
+    {
+      "sample_id": "elementary_mathematics:210",
+      "subject": "elementary_mathematics",
+      "source_row": 210
+    },
+    {
+      "sample_id": "formal_logic:22",
+      "subject": "formal_logic",
+      "source_row": 22
+    },
+    {
+      "sample_id": "global_facts:44",
+      "subject": "global_facts",
+      "source_row": 44
+    },
+    {
+      "sample_id": "high_school_biology:228",
+      "subject": "high_school_biology",
+      "source_row": 228
+    },
+    {
+      "sample_id": "high_school_chemistry:58",
+      "subject": "high_school_chemistry",
+      "source_row": 58
+    },
+    {
+      "sample_id": "high_school_computer_science:14",
+      "subject": "high_school_computer_science",
+      "source_row": 14
+    },
+    {
+      "sample_id": "high_school_european_history:29",
+      "subject": "high_school_european_history",
+      "source_row": 29
+    },
+    {
+      "sample_id": "high_school_geography:102",
+      "subject": "high_school_geography",
+      "source_row": 102
+    },
+    {
+      "sample_id": "high_school_government_and_politics:130",
+      "subject": "high_school_government_and_politics",
+      "source_row": 130
+    },
+    {
+      "sample_id": "high_school_macroeconomics:113",
+      "subject": "high_school_macroeconomics",
+      "source_row": 113
+    },
+    {
+      "sample_id": "high_school_mathematics:196",
+      "subject": "high_school_mathematics",
+      "source_row": 196
+    },
+    {
+      "sample_id": "high_school_microeconomics:81",
+      "subject": "high_school_microeconomics",
+      "source_row": 81
+    },
+    {
+      "sample_id": "high_school_physics:101",
+      "subject": "high_school_physics",
+      "source_row": 101
+    },
+    {
+      "sample_id": "high_school_psychology:309",
+      "subject": "high_school_psychology",
+      "source_row": 309
+    },
+    {
+      "sample_id": "high_school_statistics:29",
+      "subject": "high_school_statistics",
+      "source_row": 29
+    },
+    {
+      "sample_id": "high_school_us_history:35",
+      "subject": "high_school_us_history",
+      "source_row": 35
+    }
+  ],
+  "source_files": {
+    "abstract_algebra_test.csv": "4be89c0fb1d2419722e88880f6da3da95750367185ecd36f6492a6f74785cf64",
+    "anatomy_test.csv": "966dfd5c4579885ebdb8c05d6754ae5834f672632586d8595be3c0f9360e6f4e",
+    "astronomy_test.csv": "87c9c3cb5a55395c70dd9ed521dd7d2629fd4ff236c5ab647102e007f52a9341",
+    "business_ethics_test.csv": "cd3fc3a85a34cb17e6c5b2fb68ea61e7800b31120d92934019f1e17f4832fbd4",
+    "clinical_knowledge_test.csv": "06a1ea973000d5ef5d2664c4ac1c68d0423f1cab6b3b682be7942633740811f1",
+    "college_biology_test.csv": "e1204cb9d19887ea266145f038b5d4cc1fbc33d7efce186259c4ecca1cbe3119",
+    "college_chemistry_test.csv": "4d61d7887f845b887c52ac928b6dffdcf2468d79f3d0fbb4d1731092a51d2552",
+    "college_computer_science_test.csv": "d53a1d0d1c4362dacf92a4ff1d6a755beb5a87f24a7301c3c4391fcacc6530b4",
+    "college_mathematics_test.csv": "8b5bef14d4209c7918eaf947e4f12a5ae9470567722d8ba9761302d733e8ac71",
+    "college_medicine_test.csv": "9c533cfff89edaa317b2e79bbabcdd5e2e522e019679cb4a6475e5f2a1861b1e",
+    "college_physics_test.csv": "079c3696eda22c13b0472de245c7bb4918315b59481964109a4f65d2a35b4243",
+    "computer_security_test.csv": "8e40f809858db9dd8585036b53984e570b6101f72be2214b85e979c7fafa307f",
+    "conceptual_physics_test.csv": "7b39a241bb20424fd2a4e0e37ce05d94865ffc44191d8be4063be0e973312256",
+    "econometrics_test.csv": "10eb6b2d3a519a463872ef75902991b51ebf45865b29888e86d40228ace24029",
+    "electrical_engineering_test.csv": "8b0d747a97cb2cbbd8926c8deb2cda6073da6d5d3cc099693aa7761be938f5e4",
+    "elementary_mathematics_test.csv": "65a46a0e1927ea37aabd031ddcb6d81eef70a7eee1e9e0af94ec8e3fa21d728b",
+    "formal_logic_test.csv": "bc2dc7373a664ae72e166dcbe3f7aaf1bb65b99f106f1831f335c53467f35248",
+    "global_facts_test.csv": "a81058ee8e2385edaf42b8847ec9db01221fa4b16d262db415f3370884745ff9",
+    "high_school_biology_test.csv": "cfaba2b58b9714d2a6983a90bce17f14cc44cfc8195b20f8f65fef70d21331b9",
+    "high_school_chemistry_test.csv": "0e3d94da331d1eb3cafecd64a6f0f64e6fd2410b0a76676b2c0728dc5c1374f5",
+    "high_school_computer_science_test.csv": "63806168fb0e5a72fe5bfb880f19816d8997e28d3f312c6b1831f4d40f432059",
+    "high_school_european_history_test.csv": "09983655452c3c40ba466050ec82252f02a235e5946734f4d73b73688fc9509b",
+    "high_school_geography_test.csv": "c6acdaa9d94c88cdefb9dd569e376733d9ba670c07db12cdff36ccdc18c2ab0c",
+    "high_school_government_and_politics_test.csv": "fbd7a89eb2c7806097e18b40950e44e0580e6f97cd151f01a216bb575c2d7903",
+    "high_school_macroeconomics_test.csv": "354b12cc74d2806c44d1fea42efba04ec12f10233e5169466080a1d1a6f8bba5",
+    "high_school_mathematics_test.csv": "fe8f7a154834bba30947401ba37ea6c7afdcfba82ddc341c79b5d3016991d290",
+    "high_school_microeconomics_test.csv": "a250cc4976654e479cecdb7b66046ce2412df3e5e1b9c3d145ed344eae9a2256",
+    "high_school_physics_test.csv": "573e0f8d8309e4669f53a4b13248a908507b6d5d4c97c977f7bb9814658fee54",
+    "high_school_psychology_test.csv": "88c33b6b0ade567d07b8b5b074effdb52f31d773541fd71e86cb0d85a8daf7bf",
+    "high_school_statistics_test.csv": "d62843d2fd084d6af1c8a0a6491d0aa642c34a7a68476605b9b3db5841e63d3f",
+    "high_school_us_history_test.csv": "0338dea3b11881be53c2208ae8dbb571c792c0dca6f0b36a352147c0be81625e",
+    "high_school_world_history_test.csv": "7787343ae18e4e1ef833c8630c0c914c62f42c2f35d8b90f4bec2eecccfc161e",
+    "human_aging_test.csv": "01299d7e0ae4a8d082daeecc140445ce7393b464040bd810b0a60a370ae5502e",
+    "human_sexuality_test.csv": "43ca779587725f126d07733b33ba339ce27cca6f85056872eccf4b0377e28a90",
+    "international_law_test.csv": "51b3a6d74cc84651b2355d2823c30d993015ddfe8ef39725da4e0442f29489fc",
+    "jurisprudence_test.csv": "bf7a770aebfbdb181abc2c26ffd7a01ab31f93c7e2dfe6924c57c7bca4a0dff6",
+    "logical_fallacies_test.csv": "3fe8b48c74832525556455d49960cc0c3cff37496783348043ff69a1863c2244",
+    "machine_learning_test.csv": "05984b90f887a7da12b3dd8e41e6c34fa856b2c939ea3124975d90910ceb2af0",
+    "management_test.csv": "4a535a11bb480a09a302e86d157ae2d33e054cfa00e4265fe300a9408b87ec6b",
+    "marketing_test.csv": "ecf0ae0ae906194d033ca7d7746eaf201232eccb78ee24147e737473f751233d",
+    "medical_genetics_test.csv": "cc30c698e94f12c00e610a39c62d1a1d9587fa53c005359317346081f722c5e6",
+    "miscellaneous_test.csv": "061b283bb264072321d848b3b7f409a932a11ffa023fc94898dd31d2a4c80c7e",
+    "moral_disputes_test.csv": "673f5e9054f55fc5e165a3ed01e1b13eb1ee5a3405055818b50532e05de9bfdd",
+    "moral_scenarios_test.csv": "128d7bd823d793f8b7faf28f98f4b3c737b3e84d4b42c06c13458d36075a423a",
+    "nutrition_test.csv": "309432be237ac2b659acd10fdd4347d32cdc60aa9daeafbac78486a8744fa0b6",
+    "philosophy_test.csv": "a0f0c6fc9e4f08c04ff3a339996c4ed688a9fbe75d205fff4b9d3549fb49fa1e",
+    "prehistory_test.csv": "8d44938332ea3d199cfa51a18ef69af972aa33ca4af7b5f5bc62e768a31f949a",
+    "professional_accounting_test.csv": "27071efa2f8fd8502d01e80b8d7c69439586019f59e416ce039968417ef41355",
+    "professional_law_test.csv": "eeb81cac576a5f537485b6befd25837b55f64b57e9b2a7e409210d7c8d608820",
+    "professional_medicine_test.csv": "a034bf0dda10cb0848bdd3097eb1547d61ca2dac9e9b871563691621c38d51e9",
+    "professional_psychology_test.csv": "99785591dfe18717736c0c296c9d9840c832f98749060975f7e2d976ad204bf7",
+    "public_relations_test.csv": "3712f955d0c38b073b188a175a8d9a6ce64601f0ae9c98d8cfc37461c4cb5933",
+    "security_studies_test.csv": "ab7634702670ee0d5e98b852f5bcfad2821ff9a2e909d223de05422c948f6638",
+    "sociology_test.csv": "f6c464600032aa2bb53294ad53217fbb650601eee206af947b3ce4c587ff5bed",
+    "us_foreign_policy_test.csv": "2821ee009a2b1b7d4adc5a212a0bad7fe05d377455de0fe0841beab8f00142e1",
+    "virology_test.csv": "4355b9d79142da0e44a767a495a277733fd89ad67236cbbe3f42ff3a6d46b483",
+    "world_religions_test.csv": "3be96b2465419289c4fe0c8a0d003003facd243c8982c6daafc6ac90a40bd507"
+  }
+}
