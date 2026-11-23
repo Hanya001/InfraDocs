@@ -2,11 +2,14 @@
 
 - TorchNPU_Inductor
   - bugfix
-    - [DeepSeek-V4-FP8-TP4稀疏注意力Head数限制](<TorchNPU_Inductor/bugfix/DeepSeek-V4-FP8-TP4稀疏注意力Head数限制.md>)
+    - [DeepSeek-V4-FP8-TP4稀疏注意力Head数限制](<TorchNPU_Inductor/bugfix/20261117_DeepSeek-V4-FP8-TP4稀疏注意力Head数限制.md>)
     - [Inductor适配Bug定位与修复追踪](<TorchNPU_Inductor/bugfix/Inductor适配Bug定位与修复追踪.md>)
-    - [Qwen3-0.6B-RMSNorm数值差异定位](<TorchNPU_Inductor/bugfix/Qwen3-0.6B-RMSNorm数值差异定位.md>)
-    - [Qwen3.5-35B-W8A8-MTP融合量化算子参数错误](<TorchNPU_Inductor/bugfix/Qwen3.5-35B-W8A8-MTP融合量化算子参数错误.md>)
-    - [Qwen3.5-GDN-LayerNorm编译问题定位](<TorchNPU_Inductor/bugfix/Qwen3.5-GDN-LayerNorm编译问题定位.md>)
+    - [Qwen3-0.6B-RMSNorm数值差异定位](<TorchNPU_Inductor/bugfix/20261112_Qwen3-0.6B-RMSNorm数值差异定位.md>)
+    - [Qwen3.5-35B-W8A8-MTP融合量化算子参数错误](<TorchNPU_Inductor/bugfix/20261117_Qwen3.5-35B-W8A8-MTP融合量化算子参数错误.md>)
+    - [Qwen3.5-GDN-LayerNorm编译问题定位](<TorchNPU_Inductor/bugfix/20261121_Qwen3.5-GDN-LayerNorm编译问题定位.md>)
+    - [Qwen3.5-0.8B-TE-Inductor问题定位与修复](<TorchNPU_Inductor/bugfix/20261121_Qwen3.5-0.8B-TE-Inductor问题定位与修复.md>)
+    - [Qwen3.8-27B-W8A8-RMSNorm常量特化性能回退](<TorchNPU_Inductor/bugfix/20261119_Qwen3.8-27B-W8A8-RMSNorm常量特化性能回退.md>)
+    - [Qwen3.8-27B-W8A8精度定位](<TorchNPU_Inductor/bugfix/20261122_Qwen3.8-27B-W8A8精度定位.md>)
   - feature
     - [Inductor适配功能性能与覆盖缺口](<TorchNPU_Inductor/feature/Inductor适配功能性能与覆盖缺口.md>)
   - Info
