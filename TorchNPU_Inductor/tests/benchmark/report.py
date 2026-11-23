@@ -3,6 +3,15 @@ import json
 from pathlib import Path
 
 
+def format_speedup(value, digits=3):
+    text = f"{value:.{digits}f}"
+    if value > 1.05:
+        return f"**{text}**"
+    if value < 0.95:
+        return f"*{text}*"
+    return text
+
+
 def describe(data, source):
     kind = data.get("comparison_type", "unknown")
     if kind == "generation":
@@ -15,12 +24,23 @@ def describe(data, source):
     elif kind == "task_accuracy":
         result = "；".join(f"{task} 差值 {values['difference_percentage_points']:+.3f} pp"
                           for task, values in data["tasks"].items())
+        sample_changes = [f"{task} 对→错 {values['sample_comparison']['correct_to_wrong']}，"
+                          f"错→对 {values['sample_comparison']['wrong_to_correct']}"
+                          for task, values in data["tasks"].items()
+                          if values.get("sample_comparison", {}).get("available")]
+        if sample_changes:
+            result += "；逐样本 " + "；".join(sample_changes)
     elif kind == "performance":
-        result = (f"吞吐比 {data['output_throughput_ratio']:.3f}；"
-                  f"TPOT 比 {data['tpot_ratio']:.3f}；TTFT 比 {data['ttft_ratio']:.3f}；"
+        result = (f"吞吐加速比 {format_speedup(data['output_throughput_speedup'])}；"
+                  f"TPOT 加速比 {format_speedup(data['tpot_speedup'])}；"
+                  f"TTFT 加速比 {format_speedup(data['ttft_speedup'])}；"
                   f"阈值内 {data['within_thresholds']}")
     elif kind == "inductor_evidence":
-        result = f"有 Inductor 证据 {data['evidence']['has_inductor_evidence']}"
+        evidence = data["evidence"]
+        result = f"有 Inductor 证据 {evidence['has_inductor_evidence']}"
+        actual = evidence.get("actual_compilation_config")
+        if actual:
+            result += f"；实际 backend {actual.get('backend')}；图模式 {actual.get('cudagraph_mode')}"
     else:
         result = "未识别的结果格式"
     return f"| {kind} | {source} | {result} |"

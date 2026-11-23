@@ -10,6 +10,13 @@ Options:
   --tp N          Tensor parallel size; must match the number of devices (default: 1)
   --cache-root PATH  Existing cache directory containing default/ and inductor/
   --enable-prefix-caching  Enable prefix caching instead of disabling it
+  --enable-expert-parallel  Enable expert parallel
+  --quantization NAME  Override quantization method
+  --trust-remote-code  Allow checkpoint-provided model code
+  --kv-cache-dtype TYPE  Override KV Cache dtype, for example int8
+  --tokenizer-mode MODE  Override tokenizer mode
+  --max-model-len N  Override maximum model context length
+  --gpu-memory-utilization N  Override vLLM memory utilization fraction
   --repeats N     Number of default/Inductor rounds (default: 2)
   --timeout SEC   Timeout for each server process (default: 21600)
   -h, --help      Show this help
@@ -24,6 +31,7 @@ DEVICES=0
 TP=1
 CACHE_ROOT=
 PREFIX_CACHING=--no-enable-prefix-caching
+EXTRA_ARGS=()
 REPEATS=2
 TIMEOUT=21600
 while [[ $# -gt 0 ]]; do
@@ -36,6 +44,13 @@ while [[ $# -gt 0 ]]; do
     --tp) TP=$2; shift 2 ;;
     --cache-root) CACHE_ROOT=$2; shift 2 ;;
     --enable-prefix-caching) PREFIX_CACHING=--enable-prefix-caching; shift ;;
+    --enable-expert-parallel) EXTRA_ARGS+=(--enable-expert-parallel); shift ;;
+    --quantization) EXTRA_ARGS+=(--quantization "$2"); shift 2 ;;
+    --trust-remote-code) EXTRA_ARGS+=(--trust-remote-code); shift ;;
+    --kv-cache-dtype) EXTRA_ARGS+=(--kv-cache-dtype "$2"); shift 2 ;;
+    --tokenizer-mode) EXTRA_ARGS+=(--tokenizer-mode "$2"); shift 2 ;;
+    --max-model-len) EXTRA_ARGS+=(--max-model-len "$2"); shift 2 ;;
+    --gpu-memory-utilization) EXTRA_ARGS+=(--gpu-memory-utilization "$2"); shift 2 ;;
     --repeats) REPEATS=$2; shift 2 ;;
     --timeout) TIMEOUT=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -64,20 +79,7 @@ SERVER_PID=
 BASE_URL=
 COMPARISONS=()
 
-card_free() {
-  local card=$1 info
-  info=$(npu-smi info 2>/dev/null) || return 1
-  awk -F'|' -v card="$card" '
-    function trim(x) { gsub(/^[ \t]+|[ \t]+$/, "", x); return x }
-    NF >= 5 && trim($2) == card && trim($3) ~ /^[0-9]+$/ && trim($4) ~ /^[0-9]+$/ { busy=1 }
-    { for (i=1; i<=NF; i++) { x=trim($i); if (x ~ /^[0-9]+[ \t]*\/[ \t]*[0-9]+([ \t]*MB)?$/) {
-        split(x, m, "/"); if (m[1]+0 > 1024) busy=1 } } }
-    END { exit busy ? 1 : 0 }
-  ' <<< "$info"
-}
-for card in "${CARDS[@]}"; do
-  card_free "$card" || { echo "NPU $card is unavailable or not idle" >&2; exit 2; }
-done
+"$PYTHON" "$SCRIPTS/runtime.py" check-devices --devices "$DEVICES"
 "$PYTHON" "$SCRIPTS/runtime.py" snapshot --workspace "$WORKSPACE" --out "$ROOT/environment.json"
 
 free_port() {
@@ -103,7 +105,7 @@ start_server() {
     --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
     --out "$prefix.runtime.json" --timeout "$TIMEOUT" -- \
     "$PYTHON" "$SCRIPTS/server.py" run --model "$MODEL" --track "$track" \
-    --port "$port" --tp "$TP" "$PREFIX_CACHING" \
+    --port "$port" --tp "$TP" "$PREFIX_CACHING" "${EXTRA_ARGS[@]}" \
     --metadata "$prefix.server.json" -- --seed 0 > "$prefix.server.log" 2>&1 &
   SERVER_PID=$!
   "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID"
@@ -149,6 +151,14 @@ for ((round=1; round<=REPEATS; round++)); do
     start_server "$track" "$round"
     run_loads "$track" "$round"
     stop_server
+    if [[ $track == inductor ]]; then
+      evidence=$ROOT/performance/inductor.repeat$round.evidence.json
+      "$PYTHON" "$SCRIPTS/runtime.py" evidence \
+        --run-config "$ROOT/performance/inductor.repeat$round.server.json" \
+        --log "$ROOT/performance/inductor.repeat$round.server.log" \
+        --cache-dir "$CACHE_ROOT/inductor" --out "$evidence"
+      COMPARISONS+=("$evidence")
+    fi
   done
   compare_loads "$round"
 done

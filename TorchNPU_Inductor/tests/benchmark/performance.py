@@ -75,6 +75,10 @@ def run(args, parser):
     subprocess.run(command, check=True)
     if not args.out.is_file():
         raise SystemExit(f"vllm bench serve completed without producing {args.out}")
+    result = json.loads(args.out.read_text(encoding="utf-8"))
+    if result.get("failed") or result.get("completed") != num_prompts:
+        raise SystemExit(f"benchmark requests failed or incomplete: completed={result.get('completed')}, "
+                         f"failed={result.get('failed')}, expected={num_prompts}")
     print(json.dumps({"result": str(args.out), "elapsed_s": time.monotonic() - started}), flush=True)
 
 
@@ -97,9 +101,9 @@ def compare(args, parser):
         reference_ttft, candidate_ttft = metric(reference, "mean_ttft_ms"), metric(candidate, "mean_ttft_ms")
     except (ValueError, TypeError, json.JSONDecodeError) as error:
         parser.error(str(error))
-    throughput_ratio = candidate_throughput / reference_throughput
-    tpot_ratio = candidate_tpot / reference_tpot
-    ttft_ratio = candidate_ttft / reference_ttft
+    throughput_speedup = candidate_throughput / reference_throughput
+    tpot_speedup = reference_tpot / candidate_tpot
+    ttft_speedup = reference_ttft / candidate_ttft
     report = {
         "comparison_type": "performance", "reference": str(args.reference), "candidate": str(args.candidate),
         "reference_label": args.reference_label, "candidate_label": args.candidate_label,
@@ -107,11 +111,14 @@ def compare(args, parser):
                               "mean_tpot_ms": reference_tpot, "mean_ttft_ms": reference_ttft},
         "candidate_metrics": {"output_throughput": candidate_throughput,
                               "mean_tpot_ms": candidate_tpot, "mean_ttft_ms": candidate_ttft},
-        "output_throughput_ratio": throughput_ratio, "tpot_ratio": tpot_ratio, "ttft_ratio": ttft_ratio,
-        "thresholds": {"output_throughput_ratio_min": args.min_throughput_ratio,
-                       "tpot_ratio_max": args.max_tpot_ratio, "ttft_ratio_max": args.max_ttft_ratio},
-        "within_thresholds": (throughput_ratio >= args.min_throughput_ratio
-                              and tpot_ratio <= args.max_tpot_ratio and ttft_ratio <= args.max_ttft_ratio)}
+        "output_throughput_speedup": throughput_speedup,
+        "tpot_speedup": tpot_speedup, "ttft_speedup": ttft_speedup,
+        "thresholds": {"output_throughput_speedup_min": args.min_throughput_speedup,
+                       "tpot_speedup_min": args.min_tpot_speedup,
+                       "ttft_speedup_min": args.min_ttft_speedup},
+        "within_thresholds": (throughput_speedup >= args.min_throughput_speedup
+                              and tpot_speedup >= args.min_tpot_speedup
+                              and ttft_speedup >= args.min_ttft_speedup)}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print("COMPARE " + json.dumps(report, ensure_ascii=False), flush=True)
@@ -150,9 +157,9 @@ def main():
     compare_parser.add_argument("--out", type=Path, required=True)
     compare_parser.add_argument("--reference-label", default="default")
     compare_parser.add_argument("--candidate-label", default="inductor")
-    compare_parser.add_argument("--min-throughput-ratio", type=float, default=0.95)
-    compare_parser.add_argument("--max-tpot-ratio", type=float, default=1.05)
-    compare_parser.add_argument("--max-ttft-ratio", type=float, default=1.10)
+    compare_parser.add_argument("--min-throughput-speedup", type=float, default=0.95)
+    compare_parser.add_argument("--min-tpot-speedup", type=float, default=1 / 1.05)
+    compare_parser.add_argument("--min-ttft-speedup", type=float, default=1 / 1.10)
     compare_parser.add_argument("--require-within-thresholds", action="store_true")
     compare_parser.set_defaults(handler=compare)
     args = parser.parse_args()

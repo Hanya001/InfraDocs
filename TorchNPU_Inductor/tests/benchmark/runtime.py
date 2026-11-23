@@ -121,23 +121,31 @@ def evidence(args, parser):
     log_texts = {str(path): path.read_text(encoding="utf-8", errors="replace") for path in args.log}
     combined = "\n".join(log_texts.values())
     backend_in_config = False
+    actual_config = None
     if args.run_config:
         config = json.loads(args.run_config.read_text(encoding="utf-8"))
-        engine = config.get("engine_kwargs", config)
-        backend_in_config = engine.get("compilation_config", {}).get("backend") == "inductor"
+        actual_config = config.get("actual_compilation_config")
+        requested = config.get("requested_compilation_config")
+        if requested is not None:
+            backend_in_config = requested.get("backend") == "inductor"
+        else:
+            engine = config.get("engine_kwargs", config)
+            backend_in_config = engine.get("compilation_config", {}).get("backend") == "inductor"
     artifacts = []
     for root in [*args.cache_dir, *args.artifact_dir]:
         for pattern in ("output_code.py", "*.npubin", "*.ttir", "*.ttadapter"):
             artifacts.extend(str(path) for path in root.rglob(pattern) if path.is_file())
     result = {
         "backend_in_config": backend_in_config,
+        "actual_compilation_config": actual_config,
         "backend_in_log": bool(re.search(r"backend[=:\" ]+inductor", combined, re.IGNORECASE)),
         "artifacts": artifacts,
         "cudagraph_modes": sorted(set(re.findall(r"cudagraph_mode[=:\" ]+([A-Z_]+)", combined))),
         "capture_log_lines": len(re.findall(r"(?i)cudagraph.*captur|captur.*cudagraph", combined)),
         "replay_log_lines": len(re.findall(r"(?i)cudagraph.*replay|replay.*cudagraph", combined)),
     }
-    result["has_inductor_evidence"] = bool(result["backend_in_config"] or result["backend_in_log"] or artifacts)
+    actual_backend = actual_config.get("backend") == "inductor" if actual_config else False
+    result["has_inductor_evidence"] = bool(actual_backend or result["backend_in_log"] or artifacts)
     report = {"comparison_type": "inductor_evidence", "logs": list(log_texts),
               "cache_dirs": [str(path) for path in args.cache_dir],
               "artifact_dirs": [str(path) for path in args.artifact_dir],
@@ -292,6 +300,48 @@ def parse_devices(value, parser):
     return devices
 
 
+def busy_devices(output, devices, max_used_mb):
+    busy = set()
+    selected = {str(device) for device in devices}
+    current_card = None
+    for line in output.splitlines():
+        fields = [field.strip() for field in line.split("|")]
+        if len(fields) < 2:
+            continue
+        first = fields[1].split()
+        if first and first[0].isdigit():
+            current_card = first[0]
+        if current_card not in selected:
+            continue
+        if len(fields) >= 5 and fields[2].isdigit() and fields[3].isdigit():
+            busy.add(int(current_card))
+        for field in fields:
+            match = re.fullmatch(r"(\d+)\s*/\s*\d+(?:\s*MB)?", field)
+            if match and int(match.group(1)) > max_used_mb:
+                busy.add(int(current_card))
+    return sorted(busy)
+
+
+def check_devices(args, parser):
+    devices = parse_devices(args.devices, parser)
+    if not devices:
+        parser.error("--devices cannot be empty")
+    if args.max_used_mb < 0:
+        parser.error("--max-used-mb cannot be negative")
+    try:
+        completed = subprocess.run(["npu-smi", "info"], check=False,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   text=True, encoding="utf-8", errors="replace")
+    except OSError as error:
+        raise SystemExit(f"failed to execute npu-smi info: {error}")
+    if completed.returncode != 0:
+        raise SystemExit(f"npu-smi info failed: {completed.stdout.strip()}")
+    busy = busy_devices(completed.stdout, devices, args.max_used_mb)
+    if busy:
+        raise SystemExit("NPU devices unavailable or not idle: " + ",".join(map(str, busy)))
+    print("DEVICES_IDLE " + ",".join(map(str, devices)), flush=True)
+
+
 def execute_with_locks(args, command, environment, devices):
     locks = []
     if devices:
@@ -372,6 +422,10 @@ def exec_command(args, parser):
 def main():
     parser = argparse.ArgumentParser(description="Prepare runtime context or execute one supervised command.")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    device_parser = subparsers.add_parser("check-devices", help="Check that selected NPUs have no processes or significant HBM use.")
+    device_parser.add_argument("--devices", required=True)
+    device_parser.add_argument("--max-used-mb", type=int, default=8192)
+    device_parser.set_defaults(handler=check_devices)
     exec_parser = subparsers.add_parser("exec", help="Run a command with caches, optional device locks and supervision.")
     exec_parser.add_argument("--cache-dir", type=Path, required=True)
     exec_parser.add_argument("--out", type=Path, required=True)

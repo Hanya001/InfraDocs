@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: bash run_correctness.sh --model PATH --workspace PATH --results PATH [options]
+
+Options:
+  --devices IDS   Comma-separated NPU IDs (default: 0)
+  --tp N          Tensor parallel size; must match the number of devices (default: 1)
+  --cache-root PATH  Existing cache directory containing eager/ and inductor/
+  --embedding     Generate and compare embeddings instead of text
+  --enable-prefix-caching  Enable prefix caching instead of disabling it
+  --enable-expert-parallel  Enable expert parallel
+  --quantization NAME  Override quantization method
+  --trust-remote-code  Allow checkpoint-provided model code
+  --kv-cache-dtype TYPE  Override KV Cache dtype, for example int8
+  --tokenizer-mode MODE  Override tokenizer mode
+  --max-model-len N  Override maximum model context length
+  --gpu-memory-utilization N  Override vLLM memory utilization fraction
+  --repeats N     Generation repetitions for each track (default: 2)
+  --timeout SEC   Timeout for each engine process (default: 7200)
+  -h, --help      Show this help
+EOF
+}
+
+MODEL=
+WORKSPACE=
+ROOT=
+DEVICES=0
+TP=1
+CACHE_ROOT=
+OPERATION=generate
+PREFIX_CACHING=--no-enable-prefix-caching
+EXTRA_ARGS=()
+REPEATS=2
+TIMEOUT=7200
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --model) MODEL=$2; shift 2 ;;
+    --workspace) WORKSPACE=$2; shift 2 ;;
+    --results) ROOT=$2; shift 2 ;;
+    --devices) DEVICES=$2; shift 2 ;;
+    --tp) TP=$2; shift 2 ;;
+    --cache-root) CACHE_ROOT=$2; shift 2 ;;
+    --embedding) OPERATION=embedding; shift ;;
+    --enable-prefix-caching) PREFIX_CACHING=--enable-prefix-caching; shift ;;
+    --enable-expert-parallel) EXTRA_ARGS+=(--enable-expert-parallel); shift ;;
+    --quantization) EXTRA_ARGS+=(--quantization "$2"); shift 2 ;;
+    --trust-remote-code) EXTRA_ARGS+=(--trust-remote-code); shift ;;
+    --kv-cache-dtype) EXTRA_ARGS+=(--kv-cache-dtype "$2"); shift 2 ;;
+    --tokenizer-mode) EXTRA_ARGS+=(--tokenizer-mode "$2"); shift 2 ;;
+    --max-model-len) EXTRA_ARGS+=(--max-model-len "$2"); shift 2 ;;
+    --gpu-memory-utilization) EXTRA_ARGS+=(--gpu-memory-utilization "$2"); shift 2 ;;
+    --repeats) REPEATS=$2; shift 2 ;;
+    --timeout) TIMEOUT=$2; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+[[ -n $MODEL && -n $WORKSPACE && -n $ROOT ]] || { usage >&2; exit 2; }
+[[ $ROOT = /* && ! -e $ROOT ]] || { echo 'Require a new absolute result directory' >&2; exit 2; }
+[[ -f $MODEL/config.json ]] || { echo "Missing model config: $MODEL/config.json" >&2; exit 2; }
+[[ -f $WORKSPACE/env.sh ]] || { echo "Missing workspace environment: $WORKSPACE/env.sh" >&2; exit 2; }
+[[ $TP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, repeats or timeout' >&2; exit 2; }
+IFS=',' read -r -a CARDS <<< "$DEVICES"
+[[ ${#CARDS[@]} -eq $TP ]] || { echo 'The number of devices must equal TP' >&2; exit 2; }
+
+SCRIPTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$WORKSPACE/env.sh" || exit 2
+PYTHON=${PY:-python}
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 VLLM_WORKER_MULTIPROC_METHOD=spawn
+export TORCHINDUCTOR_AUTOGRAD_CACHE=0
+export VLLM_USE_V2_MODEL_RUNNER=${VLLM_USE_V2_MODEL_RUNNER:-1} PYTHONUNBUFFERED=1
+mkdir -p "$ROOT/correctness" "$ROOT/_locks"
+CACHE_ROOT=${CACHE_ROOT:-$ROOT/cache}
+LOCKS=$ROOT/_locks
+
+"$PYTHON" "$SCRIPTS/runtime.py" check-devices --devices "$DEVICES"
+"$PYTHON" "$SCRIPTS/runtime.py" snapshot --workspace "$WORKSPACE" --out "$ROOT/environment.json"
+
+for track in eager inductor; do
+  echo "CORRECTNESS_START model=$MODEL track=$track devices=$DEVICES"
+  "$PYTHON" "$SCRIPTS/runtime.py" exec --workspace "$WORKSPACE" \
+    --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
+    --out "$ROOT/correctness/$track.runtime.json" --timeout "$TIMEOUT" -- \
+    "$PYTHON" "$SCRIPTS/correctness.py" "$OPERATION" --model "$MODEL" --track "$track" \
+    --tp "$TP" --repeats "$REPEATS" --out "$ROOT/correctness/$track" "$PREFIX_CACHING" "${EXTRA_ARGS[@]}"
+done
+
+"$PYTHON" "$SCRIPTS/runtime.py" evidence \
+  --run-config "$ROOT/correctness/inductor/run_config.json" \
+  --cache-dir "$CACHE_ROOT/inductor" --out "$ROOT/correctness/inductor_evidence.json"
+
+TYPE=generation
+FILE=acc_track.jsonl
+if [[ $OPERATION == embedding ]]; then
+  TYPE=embedding
+  FILE=embeddings.json
+fi
+"$PYTHON" "$SCRIPTS/correctness.py" compare --type "$TYPE" \
+  --reference "$ROOT/correctness/eager/$FILE" \
+  --candidate "$ROOT/correctness/inductor/$FILE" \
+  --reference-label eager --candidate-label inductor \
+  --out "$ROOT/correctness/compare.json"
+"$PYTHON" "$SCRIPTS/report.py" "$ROOT/correctness/compare.json" \
+  "$ROOT/correctness/inductor_evidence.json" --out "$ROOT/correctness/SUMMARY.md"
+cat "$ROOT/correctness/SUMMARY.md"
