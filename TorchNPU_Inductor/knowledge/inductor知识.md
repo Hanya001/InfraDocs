@@ -60,6 +60,44 @@ AscendCompiler
 
 AscendCompiler和Inductor的核心区别：**AscendCompiler 主要是“改写 FX 计算图，再调用已有 NPU 算子”；Inductor 则会进一步把计算 lowering、调度，并生成新的 kernel 代码。**
 
+# 图捕获和编译的关系
+
+**`torch.compile` 是模型/函数级别的使用入口，实际编译粒度通常是 Python 帧和计算子图，并不保证整个模型只生成一张图。**
+
+默认 `fullgraph=False` 时，运行结果可能是：
+
+```
+torch.compile(model)
+        │
+        ▼
+Dynamo 尝试捕获模型执行过程
+        │
+        ├─ 没有 fx graph break
+        │     → 一个或少量完整编译图
+        │
+        └─ 存在 fx graph break
+              → 编译子图 1
+              → Python/Eager 代码
+              → 编译子图 2
+              → Python/Eager 代码
+              → …
+```
+
+
+
+这里几个概念需要区分：
+
+- **编译子图**：图内经过 Inductor 等后端优化，执行生成的 Triton/C++ 等代码。
+- **Python**：图之间的控制流、条件判断和对象操作仍由 Python 解释器执行。
+- **Eager**：图外的 PyTorch 运算仍按普通 PyTorch 方式逐算子执行，通常由上述 Python 代码触发。
+
+还有两种容易混淆的“回退”：
+
+1. **Graph break**
+   捕获时无法纳入当前图，于是拆成子图。这是默认模式下的正常机制，不是编译失败。
+2. **Guard 失败**
+   已编译图不适用于当前输入，例如形状假设改变。一般会尝试重新捕获或编译；在达到重编译上限等情况下，可能回退到 Eager。
+
 # **Inductor 的关键概念**
 
 ### 1. FX Graph、ATen Operator 与 Decomposition
