@@ -46,8 +46,11 @@ def record_server_config(command, metadata, requested):
 def run(args, parser):
     if not 0 <= args.port <= 65535 or args.tp < 1:
         parser.error("--port must be in 0..65535 and --tp must be positive")
-    if args.cudagraph_mode and args.track != "inductor":
-        parser.error("--cudagraph-mode is only valid with --track inductor")
+    if args.cudagraph_mode and args.track not in ("default", "inductor"):
+        parser.error("--cudagraph-mode is only valid with --track default or inductor")
+    if args.cudagraph_capture_sizes and args.max_cudagraph_capture_size \
+            and args.max_cudagraph_capture_size != max(args.cudagraph_capture_sizes):
+        parser.error("--max-cudagraph-capture-size must equal the largest --cudagraph-capture-sizes entry")
     if args.mtp and args.mtp_tokens < 1:
         parser.error("--mtp-tokens must be positive")
     port = args.port
@@ -60,15 +63,25 @@ def run(args, parser):
                "--tensor-parallel-size", str(args.tp), "--max-model-len", str(args.max_model_len),
                "--max-num-seqs", str(args.max_num_seqs),
                "--gpu-memory-utilization", str(args.gpu_memory_utilization)]
+    # Graph-capture settings apply to both compiled tracks. Default only gets a
+    # --compilation-config when a capture knob is given, so an unconfigured Default
+    # keeps vLLM's built-in defaults exactly as before.
+    compilation = {}
+    if args.cudagraph_mode:
+        compilation["cudagraph_mode"] = args.cudagraph_mode
+    if args.max_cudagraph_capture_size:
+        compilation["max_cudagraph_capture_size"] = args.max_cudagraph_capture_size
+    if args.cudagraph_capture_sizes:
+        compilation["cudagraph_capture_sizes"] = list(args.cudagraph_capture_sizes)
     requested_compilation = None
     if args.track == "eager":
         command.append("--enforce-eager")
-    elif args.track == "inductor":
-        compilation = {"backend": "inductor"}
-        requested_compilation = compilation
-        if args.cudagraph_mode:
-            compilation["cudagraph_mode"] = args.cudagraph_mode
-        command.extend(["--compilation-config", json.dumps(compilation, separators=(",", ":"))])
+    else:
+        if args.track == "inductor":
+            compilation["backend"] = "inductor"
+        if compilation:
+            requested_compilation = dict(compilation)
+            command.extend(["--compilation-config", json.dumps(compilation, separators=(",", ":"))])
     if args.enable_expert_parallel:
         command.append("--enable-expert-parallel")
     if args.quantization:
@@ -151,6 +164,10 @@ def main():
     run_parser.add_argument("--max-num-seqs", type=int, default=32)
     run_parser.add_argument("--gpu-memory-utilization", type=float, default=0.80)
     run_parser.add_argument("--cudagraph-mode")
+    run_parser.add_argument("--max-cudagraph-capture-size", type=int,
+                            help="Largest batch (in tokens) to capture graphs for; applies to default and inductor.")
+    run_parser.add_argument("--cudagraph-capture-sizes", type=int, nargs="+",
+                            help="Explicit capture sizes in tokens; the largest must equal --max-cudagraph-capture-size.")
     run_parser.add_argument("--quantization")
     run_parser.add_argument("--trust-remote-code", action="store_true")
     run_parser.add_argument("--tokenizer-mode")

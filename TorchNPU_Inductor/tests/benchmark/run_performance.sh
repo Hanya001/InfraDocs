@@ -18,6 +18,11 @@ Options:
   --max-model-len N  Override maximum model context length
   --gpu-memory-utilization N  Override vLLM memory utilization fraction
   --repeats N     Number of default/Inductor rounds (default: 2)
+  --capture-size N  Max cudagraph capture size in tokens for BOTH tracks (default: vLLM's 32).
+                   Expands to sizes [1,2,4,8,16,24,32] then powers of two up to N.
+  --qps LIST      Comma-separated ShareGPT request rates (default: 1,4,16,inf).
+                   Use 'none' to skip ShareGPT loads.
+  --skip-long     Skip the random 8192/32768 long-context loads.
   --timeout SEC   Timeout for each server process (default: 21600)
   -h, --help      Show this help
 EOF
@@ -34,6 +39,10 @@ PREFIX_CACHING=--no-enable-prefix-caching
 EXTRA_ARGS=()
 REPEATS=2
 TIMEOUT=21600
+CAPTURE_SIZE=
+CAPTURE_ARGS=()
+QPS_LIST="1 4 16 inf"
+SKIP_LONG=0
 while [[ $# -gt 0 ]]; do
   case $1 in
     --model) MODEL=$2; shift 2 ;;
@@ -52,6 +61,9 @@ while [[ $# -gt 0 ]]; do
     --max-model-len) EXTRA_ARGS+=(--max-model-len "$2"); shift 2 ;;
     --gpu-memory-utilization) EXTRA_ARGS+=(--gpu-memory-utilization "$2"); shift 2 ;;
     --repeats) REPEATS=$2; shift 2 ;;
+    --capture-size) CAPTURE_SIZE=$2; shift 2 ;;
+    --qps) QPS_LIST=${2//,/ }; shift 2 ;;
+    --skip-long) SKIP_LONG=1; shift ;;
     --timeout) TIMEOUT=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -63,6 +75,18 @@ done
 [[ -f $WORKSPACE/env.sh ]] || { echo "Missing workspace environment: $WORKSPACE/env.sh" >&2; exit 2; }
 [[ -f $SHAREGPT ]] || { echo "Missing ShareGPT dataset: $SHAREGPT" >&2; exit 2; }
 [[ $TP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, repeats or timeout' >&2; exit 2; }
+# Build the capture-size ladder only when asked, so an unset --capture-size leaves
+# vLLM's defaults untouched (Default then sends no --compilation-config at all).
+if [[ -n $CAPTURE_SIZE ]]; then
+  [[ $CAPTURE_SIZE =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid capture size' >&2; exit 2; }
+  LADDER="1 2 4 8 16 24 32"
+  for p in 64 128 256 512 1024 2048 4096; do
+    (( p <= CAPTURE_SIZE )) || break
+    LADDER="$LADDER $p"
+  done
+  [[ $CAPTURE_SIZE == 32 || " $LADDER " == *" $CAPTURE_SIZE "* ]] || { echo '--capture-size must be 32 or a power of two >= 64' >&2; exit 2; }
+  CAPTURE_ARGS=(--max-cudagraph-capture-size "$CAPTURE_SIZE" --cudagraph-capture-sizes $LADDER)
+fi
 IFS=',' read -r -a CARDS <<< "$DEVICES"
 [[ ${#CARDS[@]} -eq $TP ]] || { echo 'The number of devices must equal TP' >&2; exit 2; }
 
@@ -105,7 +129,7 @@ start_server() {
     --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
     --out "$prefix.runtime.json" --timeout "$TIMEOUT" -- \
     "$PYTHON" "$SCRIPTS/server.py" run --model "$MODEL" --track "$track" \
-    --port "$port" --tp "$TP" "$PREFIX_CACHING" "${EXTRA_ARGS[@]}" \
+    --port "$port" --tp "$TP" "$PREFIX_CACHING" "${CAPTURE_ARGS[@]}" "${EXTRA_ARGS[@]}" \
     --metadata "$prefix.server.json" -- --seed 0 > "$prefix.server.log" 2>&1 &
   SERVER_PID=$!
   "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID"
@@ -113,12 +137,12 @@ start_server() {
 
 run_loads() {
   local track=$1 round=$2 qps input_len
-  for qps in 1 4 16 inf; do
+  [[ $QPS_LIST == none ]] || for qps in $QPS_LIST; do
     "$PYTHON" "$SCRIPTS/performance.py" run --model "$MODEL" --base-url "$BASE_URL" \
       --dataset-name sharegpt --dataset-path "$SHAREGPT" --request-rate "$qps" \
       --out "$ROOT/performance/$track/sharegpt_qps_${qps}_repeat${round}.json"
   done
-  for input_len in 8192 32768; do
+  [[ $SKIP_LONG == 1 ]] || for input_len in 8192 32768; do
     "$PYTHON" "$SCRIPTS/performance.py" run --model "$MODEL" --base-url "$BASE_URL" \
       --dataset-name random --random-input-len "$input_len" --request-rate inf \
       --out "$ROOT/performance/$track/random_${input_len}_1024_repeat${round}.json"
@@ -127,7 +151,7 @@ run_loads() {
 
 compare_loads() {
   local round=$1 qps input_len output
-  for qps in 1 4 16 inf; do
+  [[ $QPS_LIST == none ]] || for qps in $QPS_LIST; do
     output=$ROOT/performance/compare/sharegpt_qps_${qps}_repeat${round}.json
     "$PYTHON" "$SCRIPTS/performance.py" compare \
       --reference "$ROOT/performance/default/sharegpt_qps_${qps}_repeat${round}.json" \
@@ -135,7 +159,7 @@ compare_loads() {
       --out "$output"
     COMPARISONS+=("$output")
   done
-  for input_len in 8192 32768; do
+  [[ $SKIP_LONG == 1 ]] || for input_len in 8192 32768; do
     output=$ROOT/performance/compare/random_${input_len}_1024_repeat${round}.json
     "$PYTHON" "$SCRIPTS/performance.py" compare \
       --reference "$ROOT/performance/default/random_${input_len}_1024_repeat${round}.json" \

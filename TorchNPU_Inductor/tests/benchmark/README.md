@@ -102,6 +102,9 @@ Embedding 正确性使用 `run_correctness.sh --embedding`。
 - `--enable-expert-parallel`、`--quantization`、`--trust-remote-code`、`--kv-cache-dtype`、`--tokenizer-mode`：传递对应的 vLLM 模型运行参数；W8A8C8/W4A8C8 使用 `--kv-cache-dtype int8`，DeepSeek-V4.1 官方 MXFP 权重使用 `--quantization deepseek_v4_fp8 --tokenizer-mode deepseek_v41`。
 - `--max-model-len`、`--gpu-memory-utilization`：按需覆盖上下文长度和 NPU 显存利用率；default 与 Inductor 必须保持一致。
 - `--repeats`：正确性重复生成次数或性能轮数。
+- `--capture-size N`：性能脚本专用。同时给 default 和 Inductor 设置图捕获上限，并展开为尺寸阶梯 `[1,2,4,8,16,24,32]` 加不超过 N 的 2 的幂（N 为 32 或 ≥64 的 2 的幂）。省略时两条路径都保持 vLLM 默认值（32）。比较 Inductor 的净收益时应固定该值，否则捕获窗口不同会混淆结论。
+- `--qps LIST`：性能脚本专用，逗号分隔的 ShareGPT 到达率，默认 `1,4,16,inf`；填 `none` 跳过 ShareGPT。
+- `--skip-long`：性能脚本专用，跳过 random 8192/32768 长上下文负载。
 - `--timeout`：进程超时秒数。
 
 ## 3. 看结果和退出码
