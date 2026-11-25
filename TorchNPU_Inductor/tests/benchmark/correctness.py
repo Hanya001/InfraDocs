@@ -6,6 +6,11 @@ import time
 from pathlib import Path
 
 
+PREFILL_LOGPROB_ATOL = 0.0689
+DECODE_LOGPROB_ATOL = 2 * PREFILL_LOGPROB_ATOL
+DECODE_TOPK = 20
+
+
 def config_value(value):
     if value is None:
         return None
@@ -25,10 +30,10 @@ def actual_compilation_config(llm):
             "mode": config_value(getattr(config, "mode", getattr(vllm_config, "performance_mode", None)))}
 
 PROMPTS_SHORT_ACC = [
+    "Hello, my name is",
+    "The president of the United States is",
     "The capital of France is",
-    "请比较光合作用与细胞呼吸的能量转换过程，并说明二者之间的联系。",
-    "请解方程组：3x + 2y = 16，x - y = 2。写出完整计算过程。",
-    "Write a Python function that reverses a string.",
+    "The future of AI is",
 ]
 ACC_LONG_BASE = [
     ("medicine_zh", [
@@ -188,14 +193,14 @@ def generate(args, parser):
     save_json(args.out / "run_config.json", {
         "model": args.model, "track": args.track, "tp": args.tp,
         "engine_init_s": engine_init_s, "repeats": args.repeats,
-        "sampling": {"max_tokens": args.max_tokens, "temperature": 0, "seed": args.seed,
-                     "logprobs": args.logprobs, "ignore_eos": args.ignore_eos},
+        "sampling": {"max_tokens": args.max_tokens, "temperature": 0, "top_p": 1.0, "top_k": 0,
+                     "seed": args.seed, "logprobs": args.logprobs, "ignore_eos": args.ignore_eos},
         "engine_kwargs": config,
         "requested_compilation_config": config.get("compilation_config"),
         "actual_compilation_config": actual_compilation_config(llm)})
     progress("engine_ready", engine_init_s=round(engine_init_s, 2))
-    sampling = SamplingParams(max_tokens=args.max_tokens, temperature=0.0, seed=args.seed,
-                              logprobs=args.logprobs, ignore_eos=args.ignore_eos)
+    sampling = SamplingParams(max_tokens=args.max_tokens, temperature=0.0, top_p=1.0, top_k=0,
+                              seed=args.seed, logprobs=args.logprobs, ignore_eos=args.ignore_eos)
     runs = []
     timings = []
     for repeat in range(1, args.repeats + 1):
@@ -274,11 +279,15 @@ def first_difference(a, b):
     return next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
 
 
-def candidate_map(row, position):
+def candidate_map(row, position, topk=None):
     positions = row.get("logprobs") or []
     if position >= len(positions):
         return {}
-    return {item["token_id"]: item["logprob"] for item in positions[position]["candidates"]}
+    return {
+        item["token_id"]: item["logprob"]
+        for item in positions[position]["candidates"]
+        if topk is None or item.get("rank") is None or item["rank"] <= topk
+    }
 
 
 def divergence_side(row, position, token_id, other_row):
@@ -293,7 +302,44 @@ def divergence_side(row, position, token_id, other_row):
             "logprob_in_other_topk": cross_logprob}
 
 
-def compare_generations(reference, candidate, mean_tolerance, max_tolerance):
+def pr_rule_failure(reference, candidate, prefill_tolerance, decode_tolerance):
+    if not reference.get("logprobs") or not candidate.get("logprobs"):
+        return {"reason": "missing_logprobs"}
+    reference_ids = reference["token_ids"]
+    candidate_ids = candidate["token_ids"]
+    for position, (reference_token, candidate_token) in enumerate(zip(reference_ids, candidate_ids)):
+        reference_candidates = candidate_map(reference, position)
+        candidate_candidates = candidate_map(candidate, position)
+        if reference_token not in reference_candidates or candidate_token not in candidate_candidates:
+            return {"reason": "missing_chosen_token_logprob", "position": position,
+                    "reference_token": reference_token, "candidate_token": candidate_token}
+        tolerance = prefill_tolerance if position == 0 else decode_tolerance
+        if position == 0 and reference_token != candidate_token:
+            return {"reason": "prefill_token_mismatch", "position": position,
+                    "reference_token": reference_token, "candidate_token": candidate_token}
+        if reference_token == candidate_token:
+            compared_logprob = candidate_candidates[candidate_token]
+        else:
+            candidate_topk = candidate_map(candidate, position, DECODE_TOPK)
+            if reference_token not in candidate_topk:
+                return {"reason": "decode_token_not_in_candidate_topk", "position": position,
+                        "reference_token": reference_token, "candidate_token": candidate_token,
+                        "decode_topk": DECODE_TOPK}
+            compared_logprob = candidate_topk[reference_token]
+        difference = abs(reference_candidates[reference_token] - compared_logprob)
+        if difference > tolerance:
+            return {"reason": "prefill_logprob_mismatch" if position == 0 else "decode_logprob_mismatch",
+                    "position": position, "reference_token": reference_token,
+                    "candidate_token": candidate_token, "logprob_diff": difference,
+                    "tolerance": tolerance}
+    if len(reference_ids) != len(candidate_ids):
+        return {"reason": "token_length_mismatch", "len_reference": len(reference_ids),
+                "len_candidate": len(candidate_ids)}
+    return None
+
+
+def compare_generations(reference, candidate, prefill_tolerance=PREFILL_LOGPROB_ATOL,
+                        decode_tolerance=DECODE_LOGPROB_ATOL):
     if len(reference) != len(candidate):
         raise ValueError(f"row counts differ: reference={len(reference)} candidate={len(candidate)}")
     if not reference:
@@ -313,23 +359,24 @@ def compare_generations(reference, candidate, mean_tolerance, max_tolerance):
                           "divergence": {
                               "reference": divergence_side(x, first, reference_token, y),
                               "candidate": divergence_side(y, first, candidate_token, x)}})
-        if not x.get("logprobs") or not y.get("logprobs"):
-            continue
+        pr_failure = pr_rule_failure(x, y, prefill_tolerance, decode_tolerance)
         differences = []
         overlaps = []
-        for position in range(first):
-            a, b = candidate_map(x, position), candidate_map(y, position)
-            if not a or not b:
-                continue
-            common = set(a) & set(b)
-            differences.extend(abs(a[token] - b[token]) for token in common)
-            overlaps.append(len(common) / min(len(a), len(b)))
+        if x.get("logprobs") and y.get("logprobs"):
+            for position in range(first):
+                a, b = candidate_map(x, position), candidate_map(y, position)
+                if not a or not b:
+                    continue
+                common = set(a) & set(b)
+                differences.extend(abs(a[token] - b[token]) for token in common)
+                overlaps.append(len(common) / min(len(a), len(b)))
         logprob_rows.append({
             "idx": x["idx"], "positions_before_first_diff": first,
             "common_candidate_values": len(differences),
             "mean_abs_logprob_diff": sum(differences) / len(differences) if differences else None,
             "max_abs_logprob_diff": max(differences) if differences else None,
-            "mean_topk_overlap": sum(overlaps) / len(overlaps) if overlaps else None})
+            "mean_topk_overlap": sum(overlaps) / len(overlaps) if overlaps else None,
+            "pr_failure": pr_failure})
     mean_diffs = [row["mean_abs_logprob_diff"] for row in logprob_rows
                   if row["mean_abs_logprob_diff"] is not None]
     max_diffs = [row["max_abs_logprob_diff"] for row in logprob_rows
@@ -340,15 +387,14 @@ def compare_generations(reference, candidate, mean_tolerance, max_tolerance):
                "mean_abs_logprob_diff": sum(mean_diffs) / len(mean_diffs) if mean_diffs else None,
                "max_abs_logprob_diff": max(max_diffs) if max_diffs else None,
                "mean_topk_overlap": sum(overlaps) / len(overlaps) if overlaps else None}
-    within = None
-    if mean_diffs and max_diffs:
-        within = summary["mean_abs_logprob_diff"] <= mean_tolerance and summary["max_abs_logprob_diff"] <= max_tolerance
+    within = all(row["pr_failure"] is None for row in logprob_rows)
     return {"comparison_type": "generation", "n_prompts": len(reference),
             "text_identical": sum(x["text"] == y["text"] for x, y in zip(reference, candidate)),
             "token_identical": sum(x["token_ids"] == y["token_ids"] for x, y in zip(reference, candidate)),
             "diff_details": diffs, "logprob_summary": summary,
-            "logprob_tolerance": {"mean_abs_logprob_diff_max": mean_tolerance,
-                                  "max_abs_logprob_diff_max": max_tolerance},
+            "logprob_tolerance": {"prefill_abs_logprob_diff_max": prefill_tolerance,
+                                  "decode_abs_logprob_diff_max": decode_tolerance,
+                                  "decode_topk": DECODE_TOPK},
             "logprob_within_tolerance": within, "logprob_by_prompt": logprob_rows}
 
 
@@ -376,7 +422,7 @@ def compare(args, parser):
     try:
         if args.type == "generation":
             report = compare_generations(load_rows(args.reference), load_rows(args.candidate),
-                                         args.mean_logprob_tolerance, args.max_logprob_tolerance)
+                                         args.prefill_logprob_tolerance, args.decode_logprob_tolerance)
         else:
             reference = json.loads(args.reference.read_text(encoding="utf-8"))
             candidate = json.loads(args.candidate.read_text(encoding="utf-8"))
@@ -416,7 +462,7 @@ def add_engine_args(parser, embedding_mode=False):
     if embedding_mode:
         return
     parser.add_argument("--max-tokens", type=int, default=1024)
-    parser.add_argument("--logprobs", type=int, default=5)
+    parser.add_argument("--logprobs", type=int, default=DECODE_TOPK)
     parser.add_argument("--max-num-seqs", type=int, default=32)
     parser.add_argument("--enable-expert-parallel", action="store_true")
     parser.add_argument("--mtp", action="store_true")
@@ -440,8 +486,10 @@ def main():
     compare_parser.add_argument("--out", type=Path, required=True)
     compare_parser.add_argument("--reference-label", default="reference")
     compare_parser.add_argument("--candidate-label", default="candidate")
-    compare_parser.add_argument("--mean-logprob-tolerance", type=float, default=0.05)
-    compare_parser.add_argument("--max-logprob-tolerance", type=float, default=0.5)
+    compare_parser.add_argument("--prefill-logprob-tolerance", "--mean-logprob-tolerance",
+                                dest="prefill_logprob_tolerance", type=float, default=PREFILL_LOGPROB_ATOL)
+    compare_parser.add_argument("--decode-logprob-tolerance", "--max-logprob-tolerance",
+                                dest="decode_logprob_tolerance", type=float, default=DECODE_LOGPROB_ATOL)
     compare_parser.add_argument("--cosine-min", type=float, default=0.999)
     compare_parser.add_argument("--abs-diff-max", type=float, default=1e-2)
     compare_parser.add_argument("--require-token-match", action="store_true")

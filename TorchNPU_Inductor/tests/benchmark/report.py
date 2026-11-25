@@ -1,5 +1,7 @@
 import argparse
 import json
+import re
+import statistics
 from pathlib import Path
 
 
@@ -46,6 +48,31 @@ def describe(data, source):
     return f"| {kind} | {source} | {result} |"
 
 
+def add_performance_statistics(data, source, groups):
+    if data.get("comparison_type") != "performance":
+        return
+    workload = re.sub(r"_repeat\d+$", "", Path(source).stem)
+    groups.setdefault(workload, []).append(data)
+
+
+def performance_statistics(groups):
+    if not groups:
+        return []
+    lines = ["", "## 多轮性能统计", "",
+             "加速比大于 1 表示 Inductor 更快；最小值和最大值用于展示轮次波动。", "",
+             "| 负载 | 指标 | 轮数 | 中位数 | 最小值 | 最大值 |",
+             "|---|---|---:|---:|---:|---:|"]
+    metrics = (("output_throughput_speedup", "输出吞吐加速比"),
+               ("tpot_speedup", "TPOT 加速比"), ("ttft_speedup", "TTFT 加速比"))
+    for workload in sorted(groups):
+        rows = groups[workload]
+        for key, label in metrics:
+            values = [row[key] for row in rows]
+            lines.append(f"| {workload} | {label} | {len(values)} | {statistics.median(values):.3f} "
+                         f"| {min(values):.3f} | {max(values):.3f} |")
+    return lines
+
+
 def main():
     parser = argparse.ArgumentParser(description="Summarize explicitly selected comparison JSON files.")
     parser.add_argument("inputs", type=Path, nargs="+")
@@ -53,9 +80,12 @@ def main():
     args = parser.parse_args()
     lines = ["# 测试结果汇总", "", "本表只汇总命令行明确指定的文件，不代表未列出的测试已通过。", "",
              "| 类型 | 结果文件 | 摘要 |", "|---|---|---|"]
+    performance_groups = {}
     for path in args.inputs:
         data = json.loads(path.read_text(encoding="utf-8"))
         lines.append(describe(data, path))
+        add_performance_statistics(data, path, performance_groups)
+    lines.extend(performance_statistics(performance_groups))
     output = "\n".join(lines) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

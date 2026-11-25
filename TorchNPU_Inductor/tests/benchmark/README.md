@@ -1,10 +1,11 @@
 # benchmark：Inductor 测试工具
 
-本目录提供 3 个单模型运行脚本和 6 个独立 Python 工具。测试范围见《[Inductor适配测试覆盖模型与量化矩阵.md](../Inductor适配测试覆盖模型与量化矩阵.md)》。
+本目录提供 4 个单模型运行脚本和 7 个独立 Python 工具。测试范围见《[Inductor适配测试覆盖模型与量化矩阵.md](../Inductor适配测试覆盖模型与量化矩阵.md)》。
 
 - `run_correctness.sh`：eager 与 Inductor 固定输入正确性。
 - `run_accuracy.sh`：eager 与 Inductor 的 MMLU、GSM8K 任务分数。
 - `run_performance.sh`：default 与 Inductor 的 ShareGPT、长上下文性能。
+- `run_offline_performance.sh`：default 与 Inductor 的固定 batch Latency、ShareGPT 离线 Throughput。
 
 Python 工具之间没有代码导入；脚本通过命令行、JSON 文件和缓存目录组合。测试结果不要写入本目录。
 
@@ -42,7 +43,7 @@ MMLU 目录应包含 `dev/`、`test/`；GSM8K 目录应包含 `train.jsonl`、`t
 
 ### 运行一个模型
 
-下面以 Qwen3.8-27B-W8A8、TP2、NPU 0/1 为例。三个结果目录都必须是新目录：
+下面以 Qwen3.8-27B-W8A8、TP2、NPU 0/1 为例。各结果目录都必须是新目录：
 
 ```bash
 cd <workspace>
@@ -72,17 +73,23 @@ bash "$SCRIPTS/run_performance.sh" \
   --model "$MODEL" --workspace "$WORKSPACE" \
   --results "$BATCH/performance" --sharegpt "$SHAREGPT" \
   --devices 0,1 --tp 2 --cache-root "$BATCH/correctness/cache"
+
+bash "$SCRIPTS/run_offline_performance.sh" \
+  --model "$MODEL" --workspace "$WORKSPACE" \
+  --results "$BATCH/offline_performance" --sharegpt "$SHAREGPT" \
+  --devices 0,1 --tp 2 --cache-root "$BATCH/correctness/cache"
 ```
 
 首次验证环境时，可把任务集命令改为 `--tasks mmlu --num-prompts 4`，并使用新的结果目录。
 
-## 2. 三个脚本做什么
+## 2. 四个脚本做什么
 
 | 脚本 | 默认流程 | 主要结果 |
 |---|---|---|
-| 正确性 | 8 组固定输入，eager → Inductor，各生成 2 轮，再比较 | token、文本、logprob、首个分叉点、实际引擎配置 |
+| 正确性 | PR 的 4 条短 prompt 加原有 4 条长 prompt，共 8 组，eager → Inductor，各生成 2 轮，再比较 | token、文本、logprob、首个分叉点、实际引擎配置 |
 | 任务集 | 固定 MMLU/GSM8K 各 200 题，eager → Inductor | 总分、百分点差值、固定样本清单 |
-| 性能 | ShareGPT QPS 1/4/16/inf 和两组长输入，执行两轮 ABAB | 官方性能 JSON、逐轮比较、Summary |
+| 性能 | ShareGPT QPS 1/4/16/inf 和两组长输入，执行三轮 ABAB | 官方性能 JSON、逐轮比较、中位数和波动、Summary |
+| 离线性能 | Latency 32/128、batch 8、预热 5 轮、测量 15 轮；Throughput 使用 ShareGPT 200 条、0 条预热；执行三轮 ABAB | 官方 JSON、逐轮比较、中位数和波动、Summary |
 
 顺序为：
 
@@ -101,7 +108,9 @@ Embedding 正确性使用 `run_correctness.sh --embedding`。
 - `--enable-prefix-caching`：开启 prefix cache，默认关闭。
 - `--enable-expert-parallel`、`--quantization`、`--trust-remote-code`、`--kv-cache-dtype`、`--tokenizer-mode`：传递对应的 vLLM 模型运行参数；W8A8C8/W4A8C8 使用 `--kv-cache-dtype int8`，DeepSeek-V4.1 官方 MXFP 权重使用 `--quantization deepseek_v4_fp8 --tokenizer-mode deepseek_v41`。
 - `--max-model-len`、`--gpu-memory-utilization`：按需覆盖上下文长度和 NPU 显存利用率；default 与 Inductor 必须保持一致。
-- `--repeats`：正确性重复生成次数或性能轮数。
+- `--repeats`：正确性重复生成次数或性能轮数；两个性能脚本默认 3 轮，也允许显式指定 1 轮。
+- `--tests LIST`：离线性能脚本专用，可选 `latency,throughput` 中的一个或两个。
+- `--load-format NAME`：离线性能脚本专用，可设置 `dummy`；省略时使用真实模型权重。
 - `--capture-size N`：性能脚本专用。同时给 default 和 Inductor 设置图捕获上限，并展开为尺寸阶梯 `[1,2,4,8,16,24,32]` 加不超过 N 的 2 的幂（N 为 32 或 ≥64 的 2 的幂）。省略时两条路径都保持 vLLM 默认值（32）。比较 Inductor 的净收益时应固定该值，否则捕获窗口不同会混淆结论。
 - `--qps LIST`：性能脚本专用，逗号分隔的 ShareGPT 到达率，默认 `1,4,16,inf`；填 `none` 跳过 ShareGPT。
 - `--skip-long`：性能脚本专用，跳过 random 8192/32768 长上下文负载。
@@ -111,7 +120,7 @@ Embedding 正确性使用 `run_correctness.sh --embedding`。
 
 每个阶段都会生成 `SUMMARY.md`，原始结果保留在同目录下。
 
-- 正确性重点看 token 一致数、logprob 差异和分叉点候选。
+- 正确性重点看 token 一致数、logprob 差异和分叉点候选。采样固定 `temperature=0`、`top_p=1.0`、`top_k=0`、`seed=0`、`max_tokens=1024`、`ignore_eos=False`，并返回 Top-20 logprobs；`logprob_within_tolerance` 按 PR 规则判定：prefill Token ID 必须相同且 logprob 绝对误差不超过 0.0689；decode 误差不超过 0.1378，Token 不同时 eager Token 必须出现在 Inductor 的 Top-20 中。每个 prompt 的 `pr_failure` 记录首个失败原因，原有长文本和分叉统计保留。
 - 任务集重点看两条路径的分数差；`selection_sha256` 相同表示样本集合一致。
 - 性能统一报告 Inductor 相对 default 的加速比，三项均为越高越好：吞吐加速比=`Inductor/default`，TPOT、TTFT 加速比=`default/Inductor`。大于 1 表示 Inductor 更快。
 - 默认阈值分别为吞吐加速比 >=0.95、TPOT 加速比 >=1/1.05（约 0.95238）、TTFT 加速比 >=1/1.10（约 0.90909），与原“TPOT 劣化不超过 5%、TTFT 劣化不超过 10%”等价。
@@ -143,6 +152,7 @@ cache/inductor/
 | `correctness.py` | `generate`、`embedding`、`compare` |
 | `accuracy.py` | `run`、`rescore`、`compare` |
 | `performance.py` | `run`、`compare` |
+| `offline_performance.py` | `run`、`compare`、`summary` |
 | `server.py` | `run`、`wait` |
 | `runtime.py` | 设备检查、命令包装、环境快照、证据收集 |
 | `report.py` | 汇总显式指定的 JSON |

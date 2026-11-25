@@ -17,7 +17,7 @@ Options:
   --tokenizer-mode MODE  Override tokenizer mode
   --max-model-len N  Override maximum model context length
   --gpu-memory-utilization N  Override vLLM memory utilization fraction
-  --repeats N     Number of default/Inductor rounds (default: 2)
+  --repeats N     Number of default/Inductor rounds (default: 3)
   --capture-size N  Max cudagraph capture size in tokens for BOTH tracks (default: vLLM's 32).
                    Expands to sizes [1,2,4,8,16,24,32] then powers of two up to N.
   --qps LIST      Comma-separated ShareGPT request rates (default: 1,4,16,inf).
@@ -37,7 +37,7 @@ TP=1
 CACHE_ROOT=
 PREFIX_CACHING=--no-enable-prefix-caching
 EXTRA_ARGS=()
-REPEATS=2
+REPEATS=3
 TIMEOUT=21600
 CAPTURE_SIZE=
 CAPTURE_ARGS=()
