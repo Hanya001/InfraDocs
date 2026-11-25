@@ -99,7 +99,9 @@ default → Inductor → default → Inductor
 
 MMLU 从全部学科固定抽样，再合并为一个 `fixed200` 数据集，一次推理、一次评分。它使用通用选择题提示词，只用于同配置 eager/Inductor 比较，不作为公开 MMLU 分数。
 
-Embedding 正确性使用 `run_correctness.sh --embedding`。
+固定输入文本正确性在 `--dp 1` 时使用离线引擎；`--dp N`（N>1）时自动走在线固定输入精度，依次为 eager 和 Inductor 启动服务，通过 HTTP 生成相同的 8 组 prompt、各 2 轮 JSONL，再复用原有比较和报告流程。每次生成后会正常停止服务，并最多等待 300 秒让设备释放，再启动下一条路径；Inductor 证据收集同时读取 `inductor.server.log`。
+
+Embedding 正确性使用 `run_correctness.sh --embedding`，仅支持 DP=1；DP>1 时脚本直接报错。
 
 所有脚本都支持 `--help`。常用参数：
 

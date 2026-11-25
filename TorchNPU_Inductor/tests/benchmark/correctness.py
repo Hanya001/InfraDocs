@@ -3,6 +3,7 @@ import json
 import math
 import threading
 import time
+import urllib.request
 from pathlib import Path
 
 
@@ -156,9 +157,101 @@ def serialize_logprobs(output):
     return positions
 
 
+def sampling_config(args):
+    return {"max_tokens": args.max_tokens, "temperature": 0, "top_p": 1.0, "top_k": 0,
+            "seed": args.seed, "logprobs": args.logprobs, "ignore_eos": args.ignore_eos}
+
+
+def online_rows(response):
+    choices = response.get("choices")
+    if not isinstance(choices, list) or len(choices) != len(PROMPTS_ACC):
+        count = len(choices) if isinstance(choices, list) else None
+        raise ValueError(f"expected {len(PROMPTS_ACC)} choices, got {count}")
+    ordered = [None] * len(PROMPTS_ACC)
+    for choice in choices:
+        if not isinstance(choice, dict):
+            raise ValueError("completion choice is not an object")
+        index = choice.get("index")
+        if not isinstance(index, int) or isinstance(index, bool) \
+                or not 0 <= index < len(PROMPTS_ACC) or ordered[index] is not None:
+            raise ValueError(f"invalid or duplicate choice index: {index}")
+        ordered[index] = choice
+
+    rows = []
+    for index, choice in enumerate(ordered):
+        token_ids = choice.get("token_ids")
+        prompt_token_ids = choice.get("prompt_token_ids")
+        logprobs = choice.get("logprobs")
+        if not isinstance(token_ids, list) or not isinstance(prompt_token_ids, list) \
+                or not isinstance(logprobs, dict):
+            raise ValueError(f"choice {index} is missing token_ids, prompt_token_ids or logprobs")
+        tokens = logprobs.get("tokens")
+        token_logprobs = logprobs.get("token_logprobs")
+        top_logprobs = logprobs.get("top_logprobs")
+        if not all(isinstance(values, list) for values in (tokens, token_logprobs, top_logprobs)):
+            raise ValueError(f"choice {index} has invalid logprobs arrays")
+        if not all(len(values) == len(token_ids) for values in (tokens, token_logprobs, top_logprobs)):
+            raise ValueError(f"choice {index} token_ids and logprobs array lengths differ")
+        positions = []
+        for position, (token_id, token, token_logprob, candidates) in enumerate(
+                zip(token_ids, tokens, token_logprobs, top_logprobs)):
+            selected_key = f"token_id:{token_id}"
+            if token != selected_key:
+                raise ValueError(f"choice {index} position {position} selected token is not {selected_key}")
+            if not isinstance(candidates, dict) or selected_key not in candidates:
+                raise ValueError(f"choice {index} position {position} is missing {selected_key}")
+            if candidates[selected_key] != token_logprob:
+                raise ValueError(f"choice {index} position {position} selected token logprob is misaligned")
+            values = []
+            for key, logprob in candidates.items():
+                try:
+                    candidate_token_id = int(key.removeprefix("token_id:"))
+                except (AttributeError, ValueError) as error:
+                    raise ValueError(f"choice {index} position {position} has invalid token key: {key}") from error
+                if key != f"token_id:{candidate_token_id}":
+                    raise ValueError(f"choice {index} position {position} has invalid token key: {key}")
+                values.append({"token_id": candidate_token_id, "token": key,
+                               "logprob": logprob, "rank": None})
+            values.sort(key=lambda item: -item["logprob"])
+            positions.append({"position": position, "candidates": values})
+        rows.append({"idx": index, "prompt": PROMPTS_ACC[index], "text": choice["text"],
+                     "token_ids": list(token_ids), "input_tokens": len(prompt_token_ids),
+                     "output_tokens": len(token_ids), "logprobs": positions})
+    return rows
+
+
+def request_online_rows(args):
+    payload = {"model": args.model, "prompt": PROMPTS_ACC, **sampling_config(args),
+               "return_token_ids": True, "return_tokens_as_token_ids": True,
+               "n": 1, "stream": False}
+    request = urllib.request.Request(
+        args.base_url.rstrip("/") + "/v1/completions",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(request, timeout=args.request_timeout) as response:
+        return online_rows(json.loads(response.read()))
+
+
+def save_online_run_config(args):
+    metadata = {}
+    if args.server_metadata:
+        metadata = json.loads(args.server_metadata.read_text(encoding="utf-8"))
+        if not isinstance(metadata, dict):
+            raise ValueError("--server-metadata must contain a JSON object")
+    metadata.update({
+        "model": args.model, "track": args.track, "mode": "online", "base_url": args.base_url,
+        "tp": args.tp, "dp": args.dp, "repeats": args.repeats, "sampling": sampling_config(args),
+        "return_token_ids": True, "return_tokens_as_token_ids": True})
+    save_json(args.out / "run_config.json", metadata)
+
+
 def generate(args, parser):
     if args.max_tokens < 1:
         parser.error("--max-tokens must be positive")
+    if args.request_timeout <= 0:
+        parser.error("--request-timeout must be positive")
+    if args.server_metadata and not args.base_url:
+        parser.error("--server-metadata requires --base-url")
     validate_engine_args(args, parser)
     started = time.monotonic()
     state = {"stage": "starting"}
@@ -177,42 +270,48 @@ def generate(args, parser):
                 "elapsed_s": round(time.monotonic() - started)}, ensure_ascii=False), flush=True)
 
     threading.Thread(target=heartbeat, daemon=True).start()
-    progress("engine_initializing")
-    from vllm import LLM, SamplingParams
+    if args.base_url:
+        save_online_run_config(args)
+        progress("server_ready")
+        sampling = None
+    else:
+        progress("engine_initializing")
+        from vllm import LLM, SamplingParams
 
-    config = dict(model=args.model, dtype=args.dtype, max_model_len=args.max_model_len,
-                  max_num_seqs=args.max_num_seqs, tensor_parallel_size=args.tp, seed=args.seed,
-                  gpu_memory_utilization=args.gpu_memory_utilization,
-                  enable_prefix_caching=args.enable_prefix_caching,
-                  disable_log_stats=False, **engine_kwargs(args))
-    if args.kv_cache_dtype:
-        config["kv_cache_dtype"] = args.kv_cache_dtype
-    init_started = time.monotonic()
-    llm = LLM(**config)
-    engine_init_s = time.monotonic() - init_started
-    save_json(args.out / "run_config.json", {
-        "model": args.model, "track": args.track, "tp": args.tp, "dp": args.dp,
-        "engine_init_s": engine_init_s, "repeats": args.repeats,
-        "sampling": {"max_tokens": args.max_tokens, "temperature": 0, "top_p": 1.0, "top_k": 0,
-                     "seed": args.seed, "logprobs": args.logprobs, "ignore_eos": args.ignore_eos},
-        "engine_kwargs": config,
-        "requested_compilation_config": config.get("compilation_config"),
-        "actual_compilation_config": actual_compilation_config(llm)})
-    progress("engine_ready", engine_init_s=round(engine_init_s, 2))
-    sampling = SamplingParams(max_tokens=args.max_tokens, temperature=0.0, top_p=1.0, top_k=0,
-                              seed=args.seed, logprobs=args.logprobs, ignore_eos=args.ignore_eos)
+        config = dict(model=args.model, dtype=args.dtype, max_model_len=args.max_model_len,
+                      max_num_seqs=args.max_num_seqs, tensor_parallel_size=args.tp, seed=args.seed,
+                      gpu_memory_utilization=args.gpu_memory_utilization,
+                      enable_prefix_caching=args.enable_prefix_caching,
+                      disable_log_stats=False, **engine_kwargs(args))
+        if args.kv_cache_dtype:
+            config["kv_cache_dtype"] = args.kv_cache_dtype
+        init_started = time.monotonic()
+        llm = LLM(**config)
+        engine_init_s = time.monotonic() - init_started
+        save_json(args.out / "run_config.json", {
+            "model": args.model, "track": args.track, "tp": args.tp, "dp": args.dp,
+            "engine_init_s": engine_init_s, "repeats": args.repeats,
+            "sampling": sampling_config(args), "engine_kwargs": config,
+            "requested_compilation_config": config.get("compilation_config"),
+            "actual_compilation_config": actual_compilation_config(llm)})
+        progress("engine_ready", engine_init_s=round(engine_init_s, 2))
+        sampling = SamplingParams(max_tokens=args.max_tokens, temperature=0.0, top_p=1.0, top_k=0,
+                                  seed=args.seed, logprobs=args.logprobs, ignore_eos=args.ignore_eos)
     runs = []
     timings = []
     for repeat in range(1, args.repeats + 1):
         stage_started = time.monotonic()
         progress("generating", repeat=repeat)
-        outputs = llm.generate(PROMPTS_ACC, sampling, use_tqdm=False)
-        rows = [{"idx": i, "prompt": PROMPTS_ACC[i], "text": result.outputs[0].text,
-                 "token_ids": list(result.outputs[0].token_ids),
-                 "input_tokens": len(result.prompt_token_ids),
-                 "output_tokens": len(result.outputs[0].token_ids),
-                 "logprobs": serialize_logprobs(result.outputs[0])}
-                for i, result in enumerate(outputs)]
+        if args.base_url:
+            rows = request_online_rows(args)
+        else:
+            outputs = llm.generate(PROMPTS_ACC, sampling, use_tqdm=False)
+            rows = [{"idx": i, "prompt": PROMPTS_ACC[i], "text": result.outputs[0].text,
+                     "token_ids": list(result.outputs[0].token_ids),
+                     "input_tokens": len(result.prompt_token_ids),
+                     "output_tokens": len(result.outputs[0].token_ids),
+                     "logprobs": serialize_logprobs(result.outputs[0])}
+                    for i, result in enumerate(outputs)]
         name = "acc_track.jsonl" if repeat == 1 else f"acc_repeat{repeat}.jsonl"
         with (args.out / name).open("w", encoding="utf-8") as output:
             for row in rows:
@@ -476,6 +575,9 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
     generate_parser = subparsers.add_parser("generate", help="Generate fixed-input text results once.")
     add_engine_args(generate_parser)
+    generate_parser.add_argument("--base-url")
+    generate_parser.add_argument("--server-metadata", type=Path)
+    generate_parser.add_argument("--request-timeout", type=float, default=3600)
     generate_parser.set_defaults(handler=generate)
     embedding_parser = subparsers.add_parser("embedding", help="Generate fixed-input embeddings once.")
     add_engine_args(embedding_parser, embedding_mode=True)

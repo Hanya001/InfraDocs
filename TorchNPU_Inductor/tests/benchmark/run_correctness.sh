@@ -66,6 +66,7 @@ done
 [[ -f $MODEL/config.json ]] || { echo "Missing model config: $MODEL/config.json" >&2; exit 2; }
 [[ -f $WORKSPACE/env.sh ]] || { echo "Missing workspace environment: $WORKSPACE/env.sh" >&2; exit 2; }
 [[ $TP =~ ^[1-9][0-9]*$ && $DP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, DP, repeats or timeout' >&2; exit 2; }
+[[ $DP -eq 1 || $OPERATION != embedding ]] || { echo '--embedding requires DP=1' >&2; exit 2; }
 IFS=',' read -r -a CARDS <<< "$DEVICES"
 [[ ${#CARDS[@]} -eq $((TP * DP)) ]] || { echo 'The number of devices must equal TP * DP' >&2; exit 2; }
 
@@ -78,21 +79,80 @@ export VLLM_USE_V2_MODEL_RUNNER=${VLLM_USE_V2_MODEL_RUNNER:-1} PYTHONUNBUFFERED=
 mkdir -p "$ROOT/correctness" "$ROOT/_locks"
 CACHE_ROOT=${CACHE_ROOT:-$ROOT/cache}
 LOCKS=$ROOT/_locks
+SERVER_PID=
+BASE_URL=
+EVIDENCE_ARGS=()
 
 "$PYTHON" "$SCRIPTS/runtime.py" check-devices --devices "$DEVICES"
 "$PYTHON" "$SCRIPTS/runtime.py" snapshot --workspace "$WORKSPACE" --out "$ROOT/environment.json"
 
-for track in eager inductor; do
-  echo "CORRECTNESS_START model=$MODEL track=$track devices=$DEVICES"
+free_port() {
+  "$PYTHON" -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
+}
+
+wait_for_device_release() {
+  local deadline=$((SECONDS + 300))
+  while (( SECONDS < deadline )); do
+    if "$PYTHON" "$SCRIPTS/runtime.py" check-devices --devices "$DEVICES" >/dev/null 2>&1; then
+      echo "DEVICES_RELEASED $DEVICES"
+      return 0
+    fi
+    sleep 2
+  done
+  echo "Timed out waiting for NPU devices to be released: $DEVICES" >&2
+  "$PYTHON" "$SCRIPTS/runtime.py" check-devices --devices "$DEVICES"
+}
+
+stop_server() {
+  if [[ -n $SERVER_PID ]]; then
+    kill -TERM "$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
+    SERVER_PID=
+    wait_for_device_release
+  fi
+}
+trap 'exit 130' INT TERM
+trap stop_server EXIT
+
+start_server() {
+  local track=$1 port
+  port=$(free_port)
+  BASE_URL=http://127.0.0.1:$port
+  local prefix=$ROOT/correctness/$track
   "$PYTHON" "$SCRIPTS/runtime.py" exec --workspace "$WORKSPACE" \
     --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
-    --out "$ROOT/correctness/$track.runtime.json" --timeout "$TIMEOUT" -- \
-    "$PYTHON" "$SCRIPTS/correctness.py" "$OPERATION" --model "$MODEL" --track "$track" \
-    --tp "$TP" --dp "$DP" --repeats "$REPEATS" --out "$ROOT/correctness/$track" "$PREFIX_CACHING" "${EXTRA_ARGS[@]}"
+    --out "$prefix.runtime.json" --timeout "$TIMEOUT" -- \
+    "$PYTHON" "$SCRIPTS/server.py" run --model "$MODEL" --track "$track" \
+    --port "$port" --tp "$TP" --dp "$DP" --max-model-len 8192 "$PREFIX_CACHING" "${EXTRA_ARGS[@]}" \
+    --metadata "$prefix.server.json" -- --seed 0 > "$prefix.server.log" 2>&1 &
+  SERVER_PID=$!
+  "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID" --timeout "$TIMEOUT"
+}
+
+for track in eager inductor; do
+  echo "CORRECTNESS_START model=$MODEL track=$track devices=$DEVICES"
+  if [[ $DP -eq 1 ]]; then
+    "$PYTHON" "$SCRIPTS/runtime.py" exec --workspace "$WORKSPACE" \
+      --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
+      --out "$ROOT/correctness/$track.runtime.json" --timeout "$TIMEOUT" -- \
+      "$PYTHON" "$SCRIPTS/correctness.py" "$OPERATION" --model "$MODEL" --track "$track" \
+      --tp "$TP" --dp "$DP" --repeats "$REPEATS" --out "$ROOT/correctness/$track" "$PREFIX_CACHING" "${EXTRA_ARGS[@]}"
+    continue
+  fi
+  start_server "$track"
+  "$PYTHON" "$SCRIPTS/correctness.py" generate --model "$MODEL" --track "$track" \
+    --tp "$TP" --dp "$DP" --repeats "$REPEATS" --out "$ROOT/correctness/$track" \
+    --base-url "$BASE_URL" --server-metadata "$ROOT/correctness/$track.server.json" \
+    --request-timeout "$TIMEOUT"
+  stop_server
 done
 
+if [[ $DP -gt 1 ]]; then
+  EVIDENCE_ARGS=(--log "$ROOT/correctness/inductor.server.log")
+fi
 "$PYTHON" "$SCRIPTS/runtime.py" evidence \
   --run-config "$ROOT/correctness/inductor/run_config.json" \
+  "${EVIDENCE_ARGS[@]}" \
   --cache-dir "$CACHE_ROOT/inductor" --out "$ROOT/correctness/inductor_evidence.json"
 
 TYPE=generation
