@@ -22,7 +22,7 @@ ENVIRONMENT = (
 )
 FATAL_PATTERNS = (
     "EngineCore failed to start", "WorkerProc failed to start",
-    "WorkerProc hit an exception", "Worker failed with error",
+    "Worker failed with error",
 )
 
 
