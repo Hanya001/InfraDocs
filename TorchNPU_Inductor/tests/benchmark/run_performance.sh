@@ -110,11 +110,25 @@ free_port() {
   "$PYTHON" -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
 }
 
+wait_for_device_release() {
+  local deadline=$((SECONDS + 300))
+  while (( SECONDS < deadline )); do
+    if "$PYTHON" "$SCRIPTS/runtime.py" check-devices --devices "$DEVICES" >/dev/null 2>&1; then
+      echo "DEVICES_RELEASED $DEVICES"
+      return 0
+    fi
+    sleep 2
+  done
+  echo "Timed out waiting for NPU devices to be released: $DEVICES" >&2
+  "$PYTHON" "$SCRIPTS/runtime.py" check-devices --devices "$DEVICES"
+}
+
 stop_server() {
   if [[ -n $SERVER_PID ]]; then
     kill -TERM "$SERVER_PID" 2>/dev/null || true
     wait "$SERVER_PID" 2>/dev/null || true
     SERVER_PID=
+    wait_for_device_release
   fi
 }
 trap 'exit 130' INT TERM

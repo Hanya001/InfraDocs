@@ -109,6 +109,7 @@ Embedding 正确性使用 `run_correctness.sh --embedding`。
 - `--enable-expert-parallel`、`--quantization`、`--trust-remote-code`、`--kv-cache-dtype`、`--tokenizer-mode`：传递对应的 vLLM 模型运行参数；W8A8C8/W4A8C8 使用 `--kv-cache-dtype int8`，DeepSeek-V4.1 官方 MXFP 权重使用 `--quantization deepseek_v4_fp8 --tokenizer-mode deepseek_v41`。
 - `--max-model-len`、`--gpu-memory-utilization`：按需覆盖上下文长度和 NPU 显存利用率；default 与 Inductor 必须保持一致。
 - `--repeats`：正确性重复生成次数或性能轮数；两个性能脚本默认 3 轮，也允许显式指定 1 轮。
+- 在线性能脚本每次停止服务后，最多等待 300 秒让所用 NPU 的进程退出且 HBM 回到空闲水平，再启动下一条路径或下一轮，避免显存尚未回收导致后续服务 OOM。
 - `--tests LIST`：离线性能脚本专用，可选 `latency,throughput` 中的一个或两个。
 - `--load-format NAME`：离线性能脚本专用，可设置 `dummy`；省略时使用真实模型权重。
 - `--capture-size N`：性能脚本专用。同时给 default 和 Inductor 设置图捕获上限，并展开为尺寸阶梯 `[1,2,4,8,16,24,32]` 加不超过 N 的 2 的幂（N 为 32 或 ≥64 的 2 的幂）。省略时两条路径都保持 vLLM 默认值（32）。比较 Inductor 的净收益时应固定该值，否则捕获窗口不同会混淆结论。
