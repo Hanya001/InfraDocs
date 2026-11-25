@@ -7,7 +7,8 @@ Usage: bash run_correctness.sh --model PATH --workspace PATH --results PATH [opt
 
 Options:
   --devices IDS   Comma-separated NPU IDs (default: 0)
-  --tp N          Tensor parallel size; must match the number of devices (default: 1)
+  --tp N          Tensor parallel size per DP rank (default: 1)
+  --dp N          Data parallel size; devices must equal TP * DP (default: 1)
   --cache-root PATH  Existing cache directory containing eager/ and inductor/
   --embedding     Generate and compare embeddings instead of text
   --enable-prefix-caching  Enable prefix caching instead of disabling it
@@ -29,6 +30,7 @@ WORKSPACE=
 ROOT=
 DEVICES=0
 TP=1
+DP=1
 CACHE_ROOT=
 OPERATION=generate
 PREFIX_CACHING=--no-enable-prefix-caching
@@ -42,6 +44,7 @@ while [[ $# -gt 0 ]]; do
     --results) ROOT=$2; shift 2 ;;
     --devices) DEVICES=$2; shift 2 ;;
     --tp) TP=$2; shift 2 ;;
+    --dp) DP=$2; shift 2 ;;
     --cache-root) CACHE_ROOT=$2; shift 2 ;;
     --embedding) OPERATION=embedding; shift ;;
     --enable-prefix-caching) PREFIX_CACHING=--enable-prefix-caching; shift ;;
@@ -62,9 +65,9 @@ done
 [[ $ROOT = /* && ! -e $ROOT ]] || { echo 'Require a new absolute result directory' >&2; exit 2; }
 [[ -f $MODEL/config.json ]] || { echo "Missing model config: $MODEL/config.json" >&2; exit 2; }
 [[ -f $WORKSPACE/env.sh ]] || { echo "Missing workspace environment: $WORKSPACE/env.sh" >&2; exit 2; }
-[[ $TP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, repeats or timeout' >&2; exit 2; }
+[[ $TP =~ ^[1-9][0-9]*$ && $DP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, DP, repeats or timeout' >&2; exit 2; }
 IFS=',' read -r -a CARDS <<< "$DEVICES"
-[[ ${#CARDS[@]} -eq $TP ]] || { echo 'The number of devices must equal TP' >&2; exit 2; }
+[[ ${#CARDS[@]} -eq $((TP * DP)) ]] || { echo 'The number of devices must equal TP * DP' >&2; exit 2; }
 
 SCRIPTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source "$WORKSPACE/env.sh" || exit 2
@@ -85,7 +88,7 @@ for track in eager inductor; do
     --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
     --out "$ROOT/correctness/$track.runtime.json" --timeout "$TIMEOUT" -- \
     "$PYTHON" "$SCRIPTS/correctness.py" "$OPERATION" --model "$MODEL" --track "$track" \
-    --tp "$TP" --repeats "$REPEATS" --out "$ROOT/correctness/$track" "$PREFIX_CACHING" "${EXTRA_ARGS[@]}"
+    --tp "$TP" --dp "$DP" --repeats "$REPEATS" --out "$ROOT/correctness/$track" "$PREFIX_CACHING" "${EXTRA_ARGS[@]}"
 done
 
 "$PYTHON" "$SCRIPTS/runtime.py" evidence \

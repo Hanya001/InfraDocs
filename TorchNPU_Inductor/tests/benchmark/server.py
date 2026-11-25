@@ -44,8 +44,8 @@ def record_server_config(command, metadata, requested):
 
 
 def run(args, parser):
-    if not 0 <= args.port <= 65535 or args.tp < 1:
-        parser.error("--port must be in 0..65535 and --tp must be positive")
+    if not 0 <= args.port <= 65535 or args.tp < 1 or args.dp < 1:
+        parser.error("--port must be in 0..65535 and --tp and --dp must be positive")
     if args.cudagraph_mode and args.track not in ("default", "inductor"):
         parser.error("--cudagraph-mode is only valid with --track default or inductor")
     if args.cudagraph_capture_sizes and args.max_cudagraph_capture_size \
@@ -60,7 +60,8 @@ def run(args, parser):
             port = sock.getsockname()[1]
     command = [sys.executable, "-m", "vllm.entrypoints.openai.api_server",
                "--model", args.model, "--host", args.host, "--port", str(port),
-               "--tensor-parallel-size", str(args.tp), "--max-model-len", str(args.max_model_len),
+               "--tensor-parallel-size", str(args.tp), "--data-parallel-size", str(args.dp),
+               "--max-model-len", str(args.max_model_len),
                "--max-num-seqs", str(args.max_num_seqs),
                "--gpu-memory-utilization", str(args.gpu_memory_utilization)]
     # Graph-capture settings apply to both compiled tracks. Default only gets a
@@ -160,6 +161,7 @@ def main():
     run_parser.add_argument("--host", default="127.0.0.1")
     run_parser.add_argument("--port", type=int, required=True)
     run_parser.add_argument("--tp", type=int, default=1)
+    run_parser.add_argument("--dp", type=int, default=1)
     run_parser.add_argument("--max-model-len", type=int, default=40960)
     run_parser.add_argument("--max-num-seqs", type=int, default=32)
     run_parser.add_argument("--gpu-memory-utilization", type=float, default=0.80)

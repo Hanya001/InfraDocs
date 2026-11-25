@@ -7,7 +7,8 @@ Usage: bash run_performance.sh --model PATH --workspace PATH --results PATH --sh
 
 Options:
   --devices IDS   Comma-separated NPU IDs (default: 0)
-  --tp N          Tensor parallel size; must match the number of devices (default: 1)
+  --tp N          Tensor parallel size per DP rank (default: 1)
+  --dp N          Data parallel size; devices must equal TP * DP (default: 1)
   --cache-root PATH  Existing cache directory containing default/ and inductor/
   --enable-prefix-caching  Enable prefix caching instead of disabling it
   --enable-expert-parallel  Enable expert parallel
@@ -34,6 +35,7 @@ ROOT=
 SHAREGPT=
 DEVICES=0
 TP=1
+DP=1
 CACHE_ROOT=
 PREFIX_CACHING=--no-enable-prefix-caching
 EXTRA_ARGS=()
@@ -51,6 +53,7 @@ while [[ $# -gt 0 ]]; do
     --sharegpt) SHAREGPT=$2; shift 2 ;;
     --devices) DEVICES=$2; shift 2 ;;
     --tp) TP=$2; shift 2 ;;
+    --dp) DP=$2; shift 2 ;;
     --cache-root) CACHE_ROOT=$2; shift 2 ;;
     --enable-prefix-caching) PREFIX_CACHING=--enable-prefix-caching; shift ;;
     --enable-expert-parallel) EXTRA_ARGS+=(--enable-expert-parallel); shift ;;
@@ -74,7 +77,7 @@ done
 [[ -f $MODEL/config.json ]] || { echo "Missing model config: $MODEL/config.json" >&2; exit 2; }
 [[ -f $WORKSPACE/env.sh ]] || { echo "Missing workspace environment: $WORKSPACE/env.sh" >&2; exit 2; }
 [[ -f $SHAREGPT ]] || { echo "Missing ShareGPT dataset: $SHAREGPT" >&2; exit 2; }
-[[ $TP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, repeats or timeout' >&2; exit 2; }
+[[ $TP =~ ^[1-9][0-9]*$ && $DP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, DP, repeats or timeout' >&2; exit 2; }
 # Build the capture-size ladder only when asked, so an unset --capture-size leaves
 # vLLM's defaults untouched (Default then sends no --compilation-config at all).
 if [[ -n $CAPTURE_SIZE ]]; then
@@ -88,7 +91,7 @@ if [[ -n $CAPTURE_SIZE ]]; then
   CAPTURE_ARGS=(--max-cudagraph-capture-size "$CAPTURE_SIZE" --cudagraph-capture-sizes $LADDER)
 fi
 IFS=',' read -r -a CARDS <<< "$DEVICES"
-[[ ${#CARDS[@]} -eq $TP ]] || { echo 'The number of devices must equal TP' >&2; exit 2; }
+[[ ${#CARDS[@]} -eq $((TP * DP)) ]] || { echo 'The number of devices must equal TP * DP' >&2; exit 2; }
 
 SCRIPTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source "$WORKSPACE/env.sh" || exit 2
@@ -143,7 +146,7 @@ start_server() {
     --devices "$DEVICES" --lock-dir "$LOCKS" --cache-dir "$CACHE_ROOT/$track" \
     --out "$prefix.runtime.json" --timeout "$TIMEOUT" -- \
     "$PYTHON" "$SCRIPTS/server.py" run --model "$MODEL" --track "$track" \
-    --port "$port" --tp "$TP" "$PREFIX_CACHING" "${CAPTURE_ARGS[@]}" "${EXTRA_ARGS[@]}" \
+    --port "$port" --tp "$TP" --dp "$DP" "$PREFIX_CACHING" "${CAPTURE_ARGS[@]}" "${EXTRA_ARGS[@]}" \
     --metadata "$prefix.server.json" -- --seed 0 > "$prefix.server.log" 2>&1 &
   SERVER_PID=$!
   "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID" --timeout "$TIMEOUT"

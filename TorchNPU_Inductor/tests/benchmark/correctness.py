@@ -112,7 +112,7 @@ def prepare_output(out):
 
 
 def engine_kwargs(args):
-    kwargs = {}
+    kwargs = {"data_parallel_size": args.dp}
     if args.track == "inductor":
         kwargs["compilation_config"] = {"backend": "inductor"}
         if args.cudagraph_mode:
@@ -133,8 +133,8 @@ def engine_kwargs(args):
 
 
 def validate_engine_args(args, parser):
-    if args.tp < 1 or args.repeats < 1:
-        parser.error("--tp and --repeats must be positive")
+    if args.tp < 1 or args.dp < 1 or args.repeats < 1:
+        parser.error("--tp, --dp and --repeats must be positive")
     if args.cudagraph_mode and args.track != "inductor":
         parser.error("--cudagraph-mode is only valid with --track inductor")
     if getattr(args, "mtp", False) and args.mtp_tokens < 1:
@@ -191,7 +191,7 @@ def generate(args, parser):
     llm = LLM(**config)
     engine_init_s = time.monotonic() - init_started
     save_json(args.out / "run_config.json", {
-        "model": args.model, "track": args.track, "tp": args.tp,
+        "model": args.model, "track": args.track, "tp": args.tp, "dp": args.dp,
         "engine_init_s": engine_init_s, "repeats": args.repeats,
         "sampling": {"max_tokens": args.max_tokens, "temperature": 0, "top_p": 1.0, "top_k": 0,
                      "seed": args.seed, "logprobs": args.logprobs, "ignore_eos": args.ignore_eos},
@@ -447,6 +447,7 @@ def add_engine_args(parser, embedding_mode=False):
     parser.add_argument("--track", choices=("eager", "default", "inductor"), required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--tp", type=int, default=1)
+    parser.add_argument("--dp", type=int, default=1)
     parser.add_argument("--repeats", type=int, default=3 if embedding_mode else 2)
     parser.add_argument("--max-model-len", type=int, default=8192)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.80)
