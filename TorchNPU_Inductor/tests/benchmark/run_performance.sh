@@ -23,7 +23,7 @@ Options:
   --qps LIST      Comma-separated ShareGPT request rates (default: 1,4,16,inf).
                    Use 'none' to skip ShareGPT loads.
   --skip-long     Skip the random 8192/32768 long-context loads.
-  --timeout SEC   Timeout for each server process (default: 21600)
+  --timeout SEC   Timeout for each server process, including its startup wait (default: 21600)
   -h, --help      Show this help
 EOF
 }
@@ -132,7 +132,7 @@ start_server() {
     --port "$port" --tp "$TP" "$PREFIX_CACHING" "${CAPTURE_ARGS[@]}" "${EXTRA_ARGS[@]}" \
     --metadata "$prefix.server.json" -- --seed 0 > "$prefix.server.log" 2>&1 &
   SERVER_PID=$!
-  "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID"
+  "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID" --timeout "$TIMEOUT"
 }
 
 run_loads() {
