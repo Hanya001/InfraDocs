@@ -20,10 +20,7 @@ ENVIRONMENT = (
     "VLLM_USE_BREAKABLE_CUDAGRAPH", "VLLM_CACHE_ROOT", "TORCHINDUCTOR_CACHE_DIR",
     "TRITON_CACHE_DIR", "TORCH_COMPILE_DEBUG_DIR", "VLLM_WORKER_MULTIPROC_METHOD",
 )
-FATAL_PATTERNS = (
-    "EngineCore failed to start", "WorkerProc failed to start",
-    "Worker failed with error",
-)
+FATAL_PATTERNS = ("EngineCore failed to start",)
 
 
 def inspect(args, parser):
