@@ -91,6 +91,8 @@ def run(args, parser):
         command.append("--trust-remote-code")
     if args.tokenizer_mode:
         command.extend(["--tokenizer-mode", args.tokenizer_mode])
+    if args.additional_config:
+        command.extend(["--additional-config", args.additional_config])
     if args.kv_cache_dtype:
         command.extend(["--kv-cache-dtype", args.kv_cache_dtype])
     if args.enable_prefix_caching is not None:
@@ -173,6 +175,7 @@ def main():
     run_parser.add_argument("--quantization")
     run_parser.add_argument("--trust-remote-code", action="store_true")
     run_parser.add_argument("--tokenizer-mode")
+    run_parser.add_argument("--additional-config")
     run_parser.add_argument("--kv-cache-dtype")
     run_parser.add_argument("--enable-expert-parallel", action="store_true")
     run_parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=None)

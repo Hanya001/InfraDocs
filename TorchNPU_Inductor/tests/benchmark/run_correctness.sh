@@ -17,6 +17,9 @@ Options:
   --trust-remote-code  Allow checkpoint-provided model code
   --kv-cache-dtype TYPE  Override KV Cache dtype, for example int8
   --tokenizer-mode MODE  Override tokenizer mode
+  --additional-config JSON  Pass vLLM additional configuration as a JSON object
+  --mtp          Enable MTP speculative decoding
+  --mtp-tokens N Number of speculative tokens (default: 1)
   --max-model-len N  Override maximum model context length
   --gpu-memory-utilization N  Override vLLM memory utilization fraction
   --repeats N     Generation repetitions for each track (default: 2)
@@ -53,6 +56,9 @@ while [[ $# -gt 0 ]]; do
     --trust-remote-code) EXTRA_ARGS+=(--trust-remote-code); shift ;;
     --kv-cache-dtype) EXTRA_ARGS+=(--kv-cache-dtype "$2"); shift 2 ;;
     --tokenizer-mode) EXTRA_ARGS+=(--tokenizer-mode "$2"); shift 2 ;;
+    --additional-config) EXTRA_ARGS+=(--additional-config "$2"); shift 2 ;;
+    --mtp) EXTRA_ARGS+=(--mtp); shift ;;
+    --mtp-tokens) EXTRA_ARGS+=(--mtp-tokens "$2"); shift 2 ;;
     --max-model-len) EXTRA_ARGS+=(--max-model-len "$2"); shift 2 ;;
     --gpu-memory-utilization) EXTRA_ARGS+=(--gpu-memory-utilization "$2"); shift 2 ;;
     --repeats) REPEATS=$2; shift 2 ;;

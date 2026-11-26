@@ -128,6 +128,11 @@ def engine_kwargs(args):
         kwargs["trust_remote_code"] = True
     if args.tokenizer_mode:
         kwargs["tokenizer_mode"] = args.tokenizer_mode
+    if args.additional_config:
+        additional_config = json.loads(args.additional_config)
+        if not isinstance(additional_config, dict):
+            raise ValueError("--additional-config must contain a JSON object")
+        kwargs["additional_config"] = additional_config
     if getattr(args, "mtp", False):
         kwargs["speculative_config"] = {"method": "mtp", "num_speculative_tokens": args.mtp_tokens}
     return kwargs
@@ -556,6 +561,7 @@ def add_engine_args(parser, embedding_mode=False):
     parser.add_argument("--quantization")
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument("--tokenizer-mode")
+    parser.add_argument("--additional-config")
     parser.add_argument("--kv-cache-dtype")
     parser.add_argument("--enforce-eager", action="store_true")
     parser.add_argument("--enable-prefix-caching", action=argparse.BooleanOptionalAction, default=False)
