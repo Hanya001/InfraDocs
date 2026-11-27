@@ -110,6 +110,8 @@ Embedding 正确性使用 `run_correctness.sh --embedding`，仅支持 DP=1；DP
 - `--enable-prefix-caching`：开启 prefix cache，默认关闭。
 - `--enable-expert-parallel`、`--quantization`、`--trust-remote-code`、`--kv-cache-dtype`、`--tokenizer-mode`：传递对应的 vLLM 模型运行参数；W8A8C8/W4A8C8 使用 `--kv-cache-dtype int8`，DeepSeek-V4.1 官方 MXFP 权重使用 `--quantization deepseek_v4_fp8 --tokenizer-mode deepseek_v41`。
 - `--max-model-len`、`--gpu-memory-utilization`：按需覆盖上下文长度和 NPU 显存利用率；default 与 Inductor 必须保持一致。
+- `--max-num-seqs N`：性能脚本专用，覆盖每次调度的最大序列数（默认 32）。
+- `--vllm-arg VALUE`：性能脚本专用，可重复，把参数原样透传给 vLLM 服务端，用于脚本没有包装的选项，例如 `--vllm-arg --block-size --vllm-arg 128`。
 - `--dp N`：设置数据并行度，设备数必须等于 `TP × DP`，用于 DeepSeek-V4.1 官方推荐的 DP8/TP1/EP8 等拓扑。
 - `--repeats`：正确性重复生成次数或性能轮数；两个性能脚本默认 3 轮，也允许显式指定 1 轮。
 - 在线性能脚本每次停止服务后，最多等待 300 秒让所用 NPU 的进程退出且 HBM 回到空闲水平，再启动下一条路径或下一轮，避免显存尚未回收导致后续服务 OOM。

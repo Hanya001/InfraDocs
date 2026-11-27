@@ -20,7 +20,10 @@ Options:
   --mtp          Enable MTP speculative decoding
   --mtp-tokens N Number of speculative tokens (default: 1)
   --max-model-len N  Override maximum model context length
+  --max-num-seqs N  Override maximum number of sequences per iteration (default: 32)
   --gpu-memory-utilization N  Override vLLM memory utilization fraction
+  --vllm-arg VALUE Pass VALUE straight through to the vLLM server; repeatable, for
+                   options this script does not wrap (for example --block-size 128)
   --repeats N     Number of default/Inductor rounds (default: 3)
   --capture-size N  Max cudagraph capture size in tokens for BOTH tracks (default: vLLM's 32).
                    Expands to sizes [1,2,4,8,16,24,32] then powers of two up to N.
@@ -42,6 +45,8 @@ DP=1
 CACHE_ROOT=
 PREFIX_CACHING=--no-enable-prefix-caching
 EXTRA_ARGS=()
+VLLM_ARGS=()
+MAX_NUM_SEQS=()
 REPEATS=3
 TIMEOUT=21600
 CAPTURE_SIZE=
@@ -69,6 +74,8 @@ while [[ $# -gt 0 ]]; do
     --mtp-tokens) EXTRA_ARGS+=(--mtp-tokens "$2"); shift 2 ;;
     --max-model-len) EXTRA_ARGS+=(--max-model-len "$2"); shift 2 ;;
     --gpu-memory-utilization) EXTRA_ARGS+=(--gpu-memory-utilization "$2"); shift 2 ;;
+    --max-num-seqs) MAX_NUM_SEQS=(--max-num-seqs "$2"); shift 2 ;;
+    --vllm-arg) VLLM_ARGS+=("$2"); shift 2 ;;
     --repeats) REPEATS=$2; shift 2 ;;
     --capture-size) CAPTURE_SIZE=$2; shift 2 ;;
     --qps) QPS_LIST=${2//,/ }; shift 2 ;;
@@ -84,6 +91,9 @@ done
 [[ -f $WORKSPACE/env.sh ]] || { echo "Missing workspace environment: $WORKSPACE/env.sh" >&2; exit 2; }
 [[ -f $SHAREGPT ]] || { echo "Missing ShareGPT dataset: $SHAREGPT" >&2; exit 2; }
 [[ $TP =~ ^[1-9][0-9]*$ && $DP =~ ^[1-9][0-9]*$ && $REPEATS =~ ^[1-9][0-9]*$ && $TIMEOUT =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid TP, DP, repeats or timeout' >&2; exit 2; }
+if (( ${#MAX_NUM_SEQS[@]} )); then
+  [[ ${MAX_NUM_SEQS[1]} =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid max-num-seqs' >&2; exit 2; }
+fi
 # Build the capture-size ladder only when asked, so an unset --capture-size leaves
 # vLLM's defaults untouched (Default then sends no --compilation-config at all).
 if [[ -n $CAPTURE_SIZE ]]; then
@@ -153,7 +163,8 @@ start_server() {
     --out "$prefix.runtime.json" --timeout "$TIMEOUT" -- \
     "$PYTHON" "$SCRIPTS/server.py" run --model "$MODEL" --track "$track" \
     --port "$port" --tp "$TP" --dp "$DP" "$PREFIX_CACHING" "${CAPTURE_ARGS[@]}" "${EXTRA_ARGS[@]}" \
-    --metadata "$prefix.server.json" -- --seed 0 > "$prefix.server.log" 2>&1 &
+    "${MAX_NUM_SEQS[@]}" \
+    --metadata "$prefix.server.json" -- --seed 0 "${VLLM_ARGS[@]}" > "$prefix.server.log" 2>&1 &
   SERVER_PID=$!
   "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID" --timeout "$TIMEOUT"
 }
