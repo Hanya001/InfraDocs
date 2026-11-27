@@ -396,8 +396,12 @@ def exec_command(args, parser):
     run_command = command
     if args.workspace:
         workspace = args.workspace.resolve()
+        # A workspace env.sh may export cache variables unconditionally, so re-apply
+        # the per-run cache paths after sourcing it; otherwise runs share caches.
+        exports = " ".join(f"export {name}={shlex.quote(str(path))}" for name, path in paths.items())
         run_command = ["bash", "-lc",
-                       f"cd {shlex.quote(str(workspace))} && source ./env.sh && exec {shlex.join(command)}"]
+                       f"cd {shlex.quote(str(workspace))} && source ./env.sh && {exports} "
+                       f"&& exec {shlex.join(command)}"]
     state = {"cache_dir": str(cache_dir), "cache_state": cache_state,
              "cache_paths": {name: str(path) for name, path in paths.items()},
              "workspace": str(args.workspace.resolve()) if args.workspace else None,
