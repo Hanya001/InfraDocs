@@ -1,0 +1,19 @@
+# name|model path|tp|extra run_performance.sh args
+# Default list: the 14 TP1 models with performance history (GLM excluded), then the TP2 job.
+Qwen3.6-35B-A3B-W8A8|/mnt/weight/Qwen3.6-35B-A3B-w8a8|1|
+Qwen3.6-35B-A3B|/mnt/weight/Qwen3.6-35B-A3B|1|
+Qwen3.6-35B-A3B-W8A8-MXFP8|/mnt/weight/Qwen3.6-35B-A3B-w8a8-mxfp8|1|
+Qwen3.6-35B-A3B-W4A8-MXFP|/mnt/weight/Qwen3.6-35B-A3B-w4a8-mxfp|1|
+Qwen3.8-27B|/mnt/weight/Qwen3.8-27B|1|
+Qwen3.8-27B-W8A8|/mnt/weight/Qwen3.8-27B-w8a8|1|
+Qwen3.8-27B-W8A8-MXFP8|/mnt/weight/weights/Qwen3.8-27B-w8a8-mxfp8|1|
+Qwen3-30B-A3B-W8A8|/mnt/weight/Qwen3-30B-A3B-W8A8|1|
+Qwen2.5-VL-7B-Instruct|/mnt/weight/Qwen2.5-VL-7B-Instruct|1|
+DeepSeek-V2-Lite|/mnt/weight/DeepSeek-V2-Lite|1|
+Qwen3-8B-W8A8|/mnt/weight/Qwen3-8B-W8A8|1|
+Qwen3.5-0.8B|/mnt/weight/Qwen3.5-0.8B|1|
+Qwen3-0.6B-W8A8|/mnt/weight/Qwen3-0.6B-W8A8|1|
+Qwen3-0.6B|/mnt/weight/Qwen/Qwen3-0.6B|1|
+# Optional lines (ask the user):
+Qwen3.8-27B-W8A8-TP2|/mnt/weight/Qwen3.8-27B-w8a8|2|
+# Qwen3.5-35B-A3B-w8a8-mtp|/mnt/weight/Qwen3.5-35B-A3B-w8a8-mtp|1|--quantization ascend --additional-config {"weight_nz_mode":0}
