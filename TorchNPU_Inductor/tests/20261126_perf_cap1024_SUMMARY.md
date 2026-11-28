@@ -1,12 +1,13 @@
 # Inductor 捕获 1024 测试汇总（2026-11-26）
 
-> 当前状态：14 个 TP1 模型已全部完成并核验。DeepSeek-V4.1-Flash-1017 和 GLM-5.3-Flash-w8a8 性能仍待 8 张 NPU 全部空闲后补跑；GLM-5.2-w4a8c8 记录为启动失败。本报告随补跑更新。
+> 当前状态：14 个 TP1 模型已全部完成并核验；新增 Qwen3.5-35B-A3B-w8a8-mtp 的 MTP 关闭精度、性能和历史固定负载复现。DeepSeek-V4.1-Flash-1017 仍待 8 张 NPU 全部空闲后补跑；GLM-5.3-Flash-w8a8 的性能和有效 Inductor 精度均需补跑；GLM-5.2-w4a8c8 记录为启动失败。本报告随补跑更新。
 
 ## 执行摘要
 
 - Qwen3-0.6B 冒烟的 default 与 Inductor 均为 200/200 请求成功，吞吐、TPOT、TTFT 加速比分别为 1.081、1.069、1.089。冒烟确认捕获阶梯为 `[1,2,4,8,16,24,32,64,128,256,512,1024]`。
-- 14 个 TP1 性能条目均有 3 轮 × 6 负载的 18 份 compare JSON、3 份有效 Inductor evidence，default 与 Inductor 的 `server.json` 均记录捕获上限 1024。
+- 14 个 TP1 性能条目均有 3 轮 × 6 负载的 18 份 compare JSON、3 份有效 Inductor evidence，default 与 Inductor 的 `server.json` 均记录捕获上限 1024。逐份复核确认每轮均为 `backend=inductor`、`mode=VLLM_COMPILE`，有实际编译产物和 Inductor 日志，并记录图捕获与回放；不是仅依据 `has_inductor_evidence` 标志判定。
 - `Qwen3.8-27B-W8A8` 首次运行在第 3 轮出现 1/200 请求断连，已保留不完整现场；独立重试复用编译缓存，三轮所有请求完整，下表采用重试结果。
+- Qwen3.5-35B-A3B-w8a8-mtp（TP2）MTP 关闭时，固定 token 一致 2/8、logprob 容差未通过；在线性能 18 个“轮次×负载”全部在阈值内。历史 batch32 复现加速比为 0.999，未复现 910B3 上的 1.143。MTP 开启性能按用户要求暂停。
 - 阈值要求：输出吞吐加速比 ≥ 0.95，TPOT 加速比 ≥ 0.9523809524，TTFT 加速比 ≥ 0.9090909091。加速比越高越好，阈值判定不等于精度判定。
 - 原始结果位于 `server-results/benchmark/20261125_perf_cap1024_01/`，不含 cache；服务器正式批次为 `perf_cap1024_20261125_03`，W8A8 重试为 `perf_cap1024_20261125_retry_w8a8_01`。
 
@@ -15,17 +16,18 @@
 - A5 容器 `inductor_214build_z00896543_20261120_1546`，8 × Ascend950DT；Python 3.12.16，torch 2.13.0+cpu，torch-npu 2.13.0.post1+git6efa6d0，triton-ascend 3.6.0.post2+git5aff558a，vLLM/vllm-ascend 0.33.0。
 - 每次运行均从 `env.sh` 加载环境，`VLLM_WORKER_MULTIPROC_METHOD=spawn`、`VLLM_USE_V2_MODEL_RUNNER=1`、NPU Inductor backend 为 `triton_experimental`。仓库 HEAD：meta `6249807b`、pytorch `6efa6d09`、vllm-ascend `0e82ba34`、triton-ascend `5aff558a`；详细包版本和 `env.sh` 哈希见各条目 `environment.json`。
 - 正常 TP1 条目使用新缓存，Inductor 首轮为 cold、后续为 warm。W8A8 重试显式复用首次运行的缓存，三轮均为 warm；各轮 `runtime.json` 保存实际状态。
-- benchmark 分支 `feat/benchmark-capture-size-controls`，相关提交包括 `fd7cd40`（路径切换前等待设备释放）、`ba9124d`（保留 worker 异常栈）、`d7d19fa` 与 `6e5b08c`（DP 在线精度支持）。
+- benchmark 分支 `feat/benchmark-capture-size-controls`，相关提交包括 `fd7cd40`（路径切换前等待设备释放）、`ba9124d`（保留 worker 异常栈）、`d7d19fa` 与 `6e5b08c`（DP 在线精度支持），`5ce41ca`（MTP 与 additional-config 参数透传）。
 
 ## 精度（固定输入）
 
-### GLM-5.3-Flash-w8a8：固定输入 token/logprob
+### GLM-5.3-Flash-w8a8：固定输入 token/logprob 诊断记录（未形成有效 Inductor 验证）
 
-- token 完全一致：7/8；PR 规则通过：7/8；`logprob_within_tolerance`=False。
+- **结论：本次不能作为 eager 与 Inductor 的精度比较，需显式启用 `VLLM_COMPILE` 后重跑。** 下列 token/logprob 数据仅保留为本次运行记录，不作为有效精度结论。
+- 本次记录的 token 完全一致：7/8；PR 规则通过：7/8；`logprob_within_tolerance`=False。
 - 分叉前的 logprob 绝对差：平均 0.000000，最大 0.000000；容差：prefill 0.0689，decode 0.1378，Top-20。
-- eager：引擎初始化 176 秒；缓存状态 cold；返回码 0；实际 backend vllm_ascend.compilation.compiler_interface.AscendCompiler，图模式 NONE，级别 O2。
-- inductor：引擎初始化 225 秒；缓存状态 cold；返回码 0；实际 backend inductor，图模式 FULL_AND_PIECEWISE，级别 O2。
-- Inductor 路径证据：True（编译产物 0 个）。
+- eager：引擎初始化 176 秒；缓存状态 cold；返回码 0；实际 backend vllm_ascend.compilation.compiler_interface.AscendCompiler，图模式 NONE，编译模式 NONE，级别 O2。
+- 标记为 inductor 的运行：引擎初始化 225 秒；缓存状态 cold；返回码 0；实际 backend inductor，图模式 FULL_AND_PIECEWISE，**编译模式 NONE**，级别 O2。vLLM 对 `CompilationMode.NONE` 的定义是不应用 `torch.compile`，模型以 PyTorch eager 方式运行。
+- 编译产物为 0，服务器缓存目录仅有 1 个模型信息 JSON；没有 Inductor 日志、图捕获或回放记录。`has_inductor_evidence=True` 是判定逻辑仅检查 `backend=inductor` 导致的误判，不代表实际执行了 Inductor 编译。现有离线精度任务未保存 stdout 日志，编译模式被降为 NONE 的原因尚未确定。
 
 | prompt | 输入类型 | 首次分叉位置 | 首个未通过的规则 |
 |---:|---|---:|---|
@@ -38,26 +40,122 @@
 | p6 | 长 | — | 通过 |
 | p7 | 长 | — | 通过 |
 
+### Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭）：固定 token/logprob
+
+- token 完全一致：2/8；text 完全一致：2/8；PR 规则通过：2/8；`logprob_within_tolerance`=False。
+- logprob 绝对差：平均 0.260548，最大 6.937304；Top-k 平均重叠 0.940752；容差：prefill 0.0689，decode 0.1378，Top-20。
+- eager：引擎初始化 166.6 秒；返回码 0；编译模式 NONE。
+- Inductor：引擎初始化 197.0 秒；返回码 0；`mode=VLLM_COMPILE`，编译产物 82 个，确认实际走了 Inductor。
+- 设备：NPU 0、1，TP2，`weight_nz_mode=0`，MTP 关闭。执行后用户指出 0 卡存在外部活动，因此该结果保留设备记录；后续历史复现已改用 NPU 2、3。
+
+| prompt | 首次分叉位置 | 首个未通过的规则 |
+|---:|---:|---|
+| p0 | 10 | decode_logprob_mismatch@12 |
+| p1 | 12 | decode_logprob_mismatch@12 |
+| p2 | — | 通过 |
+| p3 | — | 通过 |
+| p4 | 70 | decode_logprob_mismatch@24 |
+| p5 | 183 | decode_logprob_mismatch@29 |
+| p6 | 137 | decode_logprob_mismatch@23 |
+| p7 | 37 | decode_logprob_mismatch@21 |
+
 ## 性能总览
 
-加速比均以 Inductor 相对 default 计算，三项都是越高越好；小于 0.95 用斜体、大于 1.05 用粗体。
+加速比均以 Inductor 相对 default 计算，三项都是越高越好。每行对应一种模型和负载，数值为三轮加速比的中位数，不再跨负载汇总；小于 0.95 用斜体、大于 1.05 用粗体。各轮最小值和最大值见下方模型详细表。
 
-| 模型 | 有效轮数 | 吞吐加速比中位数范围 | TPOT 加速比中位数范围 | TTFT 加速比中位数范围 | 阈值外（轮次×负载） |
-|---|---:|---:|---:|---:|---:|
-| DeepSeek-V2-Lite | 3/3 | 0.997 – 1.004 | 0.997 – 1.004 | 0.992 – 1.050 | 0/18 |
-| Qwen2.5-VL-7B-Instruct | 3/3 | 0.929 – 1.020 | 0.943 – 1.051 | 0.795 – 1.079 | 6/18 |
-| Qwen3-0.6B | 3/3 | 0.998 – 1.033 | 0.973 – 1.018 | 0.856 – 1.317 | 6/18 |
-| Qwen3-0.6B-W8A8 | 3/3 | 0.999 – 1.046 | 0.988 – 1.030 | 0.981 – 1.325 | 1/18 |
-| Qwen3-30B-A3B-W8A8 | 3/3 | 1.000 – 1.052 | 1.006 – 1.047 | 0.983 – 1.066 | 0/18 |
-| Qwen3-8B-W8A8 | 3/3 | 1.000 – 1.015 | 0.999 – 1.013 | 0.957 – 1.065 | 0/18 |
-| Qwen3.5-0.8B | 3/3 | 0.976 – 1.063 | 0.953 – 1.067 | 0.846 – 1.023 | 4/18 |
-| Qwen3.6-35B-A3B | 3/3 | 0.982 – 1.016 | 0.986 – 1.015 | 0.923 – 1.052 | 0/18 |
-| Qwen3.6-35B-A3B-W4A8-MXFP | 3/3 | 0.974 – 1.011 | 0.984 – 1.010 | 0.899 – 1.016 | 2/18 |
-| Qwen3.6-35B-A3B-W8A8 | 3/3 | 0.976 – 1.016 | 0.986 – 1.035 | 0.862 – 1.019 | 3/18 |
-| Qwen3.6-35B-A3B-W8A8-MXFP8 | 3/3 | 0.972 – 1.022 | 0.985 – 1.026 | 0.868 – 1.083 | 5/18 |
-| Qwen3.8-27B | 3/3 | 0.964 – 1.001 | 0.976 – 1.002 | 0.894 – 1.001 | 3/18 |
-| Qwen3.8-27B-W8A8 | 3/3 | 0.954 – 1.008 | 0.971 – 1.006 | 0.891 – 1.008 | 6/18 |
-| Qwen3.8-27B-W8A8-MXFP8 | 3/3 | 0.959 – 1.005 | 0.969 – 1.006 | 0.904 – 1.033 | 3/18 |
+| 模型 | 负载 | 吞吐加速比中位数 | TPOT 加速比中位数 | TTFT 加速比中位数 | 阈值内轮数 |
+|---|---|---:|---:|---:|---:|
+| DeepSeek-V2-Lite | ShareGPT QPS1 | 1.000 | 1.002 | **1.050** | 3/3 |
+| DeepSeek-V2-Lite | ShareGPT QPS4 | 1.000 | 1.003 | 1.025 | 3/3 |
+| DeepSeek-V2-Lite | ShareGPT QPS16 | 1.004 | 1.004 | 1.011 | 3/3 |
+| DeepSeek-V2-Lite | ShareGPT QPSinf | 1.002 | 1.002 | 1.004 | 3/3 |
+| DeepSeek-V2-Lite | 随机 8192/1024 | 0.997 | 0.997 | 0.992 | 3/3 |
+| DeepSeek-V2-Lite | 随机 32768/1024 | 1.000 | 0.997 | 1.008 | 3/3 |
+| Qwen2.5-VL-7B-Instruct | ShareGPT QPS1 | 1.000 | 1.005 | 0.995 | 3/3 |
+| Qwen2.5-VL-7B-Instruct | ShareGPT QPS4 | 1.001 | **1.051** | 1.031 | 3/3 |
+| Qwen2.5-VL-7B-Instruct | ShareGPT QPS16 | 1.020 | 1.022 | **1.079** | 3/3 |
+| Qwen2.5-VL-7B-Instruct | ShareGPT QPSinf | 1.019 | 1.028 | 1.011 | 3/3 |
+| Qwen2.5-VL-7B-Instruct | 随机 8192/1024 | 0.964 | 0.986 | *0.795* | 0/3 |
+| Qwen2.5-VL-7B-Instruct | 随机 32768/1024 | *0.929* | *0.943* | *0.864* | 0/3 |
+| Qwen3-0.6B | ShareGPT QPS1 | 1.000 | 0.973 | *0.949* | 2/3 |
+| Qwen3-0.6B | ShareGPT QPS4 | 1.000 | 0.988 | *0.942* | 2/3 |
+| Qwen3-0.6B | ShareGPT QPS16 | 0.998 | 0.986 | *0.856* | 1/3 |
+| Qwen3-0.6B | ShareGPT QPSinf | 1.004 | 1.001 | 1.010 | 2/3 |
+| Qwen3-0.6B | 随机 8192/1024 | 1.033 | 1.018 | **1.317** | 2/3 |
+| Qwen3-0.6B | 随机 32768/1024 | 1.001 | 1.002 | 0.982 | 3/3 |
+| Qwen3-0.6B-W8A8 | ShareGPT QPS1 | 1.000 | 0.998 | 0.997 | 3/3 |
+| Qwen3-0.6B-W8A8 | ShareGPT QPS4 | 1.000 | 0.988 | 1.009 | 3/3 |
+| Qwen3-0.6B-W8A8 | ShareGPT QPS16 | 1.000 | 0.989 | 0.981 | 2/3 |
+| Qwen3-0.6B-W8A8 | ShareGPT QPSinf | 1.011 | 1.009 | 1.015 | 3/3 |
+| Qwen3-0.6B-W8A8 | 随机 8192/1024 | 1.046 | 1.030 | **1.325** | 3/3 |
+| Qwen3-0.6B-W8A8 | 随机 32768/1024 | 0.999 | 1.000 | 0.997 | 3/3 |
+| Qwen3-30B-A3B-W8A8 | ShareGPT QPS1 | 1.000 | 1.043 | 1.000 | 3/3 |
+| Qwen3-30B-A3B-W8A8 | ShareGPT QPS4 | 1.003 | 1.047 | **1.052** | 3/3 |
+| Qwen3-30B-A3B-W8A8 | ShareGPT QPS16 | 1.032 | 1.032 | **1.066** | 3/3 |
+| Qwen3-30B-A3B-W8A8 | ShareGPT QPSinf | **1.052** | 1.045 | **1.053** | 3/3 |
+| Qwen3-30B-A3B-W8A8 | 随机 8192/1024 | 1.043 | 1.043 | **1.060** | 3/3 |
+| Qwen3-30B-A3B-W8A8 | 随机 32768/1024 | 1.003 | 1.006 | 0.983 | 3/3 |
+| Qwen3-8B-W8A8 | ShareGPT QPS1 | 1.000 | 0.999 | 0.957 | 3/3 |
+| Qwen3-8B-W8A8 | ShareGPT QPS4 | 1.000 | 1.012 | 0.977 | 3/3 |
+| Qwen3-8B-W8A8 | ShareGPT QPS16 | 1.009 | 1.012 | **1.065** | 3/3 |
+| Qwen3-8B-W8A8 | ShareGPT QPSinf | 1.015 | 1.013 | 1.014 | 3/3 |
+| Qwen3-8B-W8A8 | 随机 8192/1024 | 1.004 | 1.006 | 0.964 | 3/3 |
+| Qwen3-8B-W8A8 | 随机 32768/1024 | 1.000 | 1.001 | 0.990 | 3/3 |
+| Qwen3.5-0.8B | ShareGPT QPS1 | 1.000 | 0.992 | 1.022 | 2/3 |
+| Qwen3.5-0.8B | ShareGPT QPS4 | 0.999 | 0.953 | 0.994 | 2/3 |
+| Qwen3.5-0.8B | ShareGPT QPS16 | 0.976 | 0.980 | *0.846* | 1/3 |
+| Qwen3.5-0.8B | ShareGPT QPSinf | 1.040 | 1.040 | 1.023 | 3/3 |
+| Qwen3.5-0.8B | 随机 8192/1024 | **1.063** | **1.067** | 0.996 | 3/3 |
+| Qwen3.5-0.8B | 随机 32768/1024 | 0.990 | 0.992 | 0.969 | 3/3 |
+| Qwen3.6-35B-A3B | ShareGPT QPS1 | 1.000 | 1.014 | 1.040 | 3/3 |
+| Qwen3.6-35B-A3B | ShareGPT QPS4 | 1.001 | 1.014 | **1.052** | 3/3 |
+| Qwen3.6-35B-A3B | ShareGPT QPS16 | 1.016 | 1.015 | 1.028 | 3/3 |
+| Qwen3.6-35B-A3B | ShareGPT QPSinf | 1.011 | 1.008 | 1.010 | 3/3 |
+| Qwen3.6-35B-A3B | 随机 8192/1024 | 0.995 | 1.003 | *0.923* | 3/3 |
+| Qwen3.6-35B-A3B | 随机 32768/1024 | 0.982 | 0.986 | 0.970 | 3/3 |
+| Qwen3.6-35B-A3B-W4A8-MXFP | ShareGPT QPS1 | 1.000 | 1.002 | 0.999 | 3/3 |
+| Qwen3.6-35B-A3B-W4A8-MXFP | ShareGPT QPS4 | 1.000 | 0.990 | 0.990 | 3/3 |
+| Qwen3.6-35B-A3B-W4A8-MXFP | ShareGPT QPS16 | 1.005 | 1.005 | 1.011 | 3/3 |
+| Qwen3.6-35B-A3B-W4A8-MXFP | ShareGPT QPSinf | 1.011 | 1.010 | 1.016 | 3/3 |
+| Qwen3.6-35B-A3B-W4A8-MXFP | 随机 8192/1024 | 0.994 | 1.004 | *0.899* | 1/3 |
+| Qwen3.6-35B-A3B-W4A8-MXFP | 随机 32768/1024 | 0.974 | 0.984 | *0.920* | 3/3 |
+| Qwen3.6-35B-A3B-W8A8 | ShareGPT QPS1 | 1.001 | 1.035 | 0.995 | 3/3 |
+| Qwen3.6-35B-A3B-W8A8 | ShareGPT QPS4 | 1.001 | 1.027 | 1.000 | 3/3 |
+| Qwen3.6-35B-A3B-W8A8 | ShareGPT QPS16 | 1.010 | 1.009 | 1.019 | 3/3 |
+| Qwen3.6-35B-A3B-W8A8 | ShareGPT QPSinf | 1.016 | 1.011 | 1.019 | 3/3 |
+| Qwen3.6-35B-A3B-W8A8 | 随机 8192/1024 | 0.995 | 1.007 | *0.862* | 0/3 |
+| Qwen3.6-35B-A3B-W8A8 | 随机 32768/1024 | 0.976 | 0.986 | *0.926* | 3/3 |
+| Qwen3.6-35B-A3B-W8A8-MXFP8 | ShareGPT QPS1 | 1.000 | 1.006 | 1.034 | 3/3 |
+| Qwen3.6-35B-A3B-W8A8-MXFP8 | ShareGPT QPS4 | 1.001 | 1.026 | **1.083** | 3/3 |
+| Qwen3.6-35B-A3B-W8A8-MXFP8 | ShareGPT QPS16 | 1.021 | 1.020 | 1.038 | 3/3 |
+| Qwen3.6-35B-A3B-W8A8-MXFP8 | ShareGPT QPSinf | 1.022 | 1.015 | 1.023 | 3/3 |
+| Qwen3.6-35B-A3B-W8A8-MXFP8 | 随机 8192/1024 | 0.993 | 1.003 | *0.868* | 0/3 |
+| Qwen3.6-35B-A3B-W8A8-MXFP8 | 随机 32768/1024 | 0.972 | 0.985 | *0.908* | 1/3 |
+| Qwen3.8-27B | ShareGPT QPS1 | 1.000 | 1.002 | 0.994 | 3/3 |
+| Qwen3.8-27B | ShareGPT QPS4 | 1.000 | 1.000 | 0.988 | 3/3 |
+| Qwen3.8-27B | ShareGPT QPS16 | 1.001 | 1.001 | 1.001 | 3/3 |
+| Qwen3.8-27B | ShareGPT QPSinf | 0.999 | 1.001 | 0.995 | 3/3 |
+| Qwen3.8-27B | 随机 8192/1024 | 0.983 | 0.999 | *0.894* | 0/3 |
+| Qwen3.8-27B | 随机 32768/1024 | 0.964 | 0.976 | *0.923* | 3/3 |
+| Qwen3.8-27B-W8A8 | ShareGPT QPS1 | 1.000 | 1.006 | 0.977 | 3/3 |
+| Qwen3.8-27B-W8A8 | ShareGPT QPS4 | 1.000 | 0.997 | *0.932* | 2/3 |
+| Qwen3.8-27B-W8A8 | ShareGPT QPS16 | 1.001 | 1.001 | 0.996 | 3/3 |
+| Qwen3.8-27B-W8A8 | ShareGPT QPSinf | 1.008 | 0.997 | 1.008 | 3/3 |
+| Qwen3.8-27B-W8A8 | 随机 8192/1024 | 0.977 | 0.993 | *0.891* | 0/3 |
+| Qwen3.8-27B-W8A8 | 随机 32768/1024 | 0.954 | 0.971 | *0.900* | 1/3 |
+| Qwen3.8-27B-W8A8-MXFP8 | ShareGPT QPS1 | 1.000 | 1.006 | 1.005 | 3/3 |
+| Qwen3.8-27B-W8A8-MXFP8 | ShareGPT QPS4 | 1.000 | 1.006 | 1.033 | 3/3 |
+| Qwen3.8-27B-W8A8-MXFP8 | ShareGPT QPS16 | 1.005 | 1.005 | 1.007 | 3/3 |
+| Qwen3.8-27B-W8A8-MXFP8 | ShareGPT QPSinf | 1.001 | 0.993 | 0.999 | 3/3 |
+| Qwen3.8-27B-W8A8-MXFP8 | 随机 8192/1024 | 0.980 | 0.994 | *0.904* | 0/3 |
+| Qwen3.8-27B-W8A8-MXFP8 | 随机 32768/1024 | 0.959 | 0.969 | *0.926* | 3/3 |
+
+| Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭） | ShareGPT QPS1 | 1.000 | 1.011 | 1.003 | 3/3 |
+| Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭） | ShareGPT QPS4 | 1.001 | 1.021 | 1.004 | 3/3 |
+| Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭） | ShareGPT QPS16 | 1.009 | 1.011 | 1.013 | 3/3 |
+| Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭） | ShareGPT QPSinf | 1.004 | 1.001 | 1.005 | 3/3 |
+| Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭） | 随机 8192/1024 | 1.000 | 0.998 | 0.973 | 3/3 |
+| Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭） | 随机 32768/1024 | 0.994 | 0.996 | 0.977 | 3/3 |
 
 ### DeepSeek-V2-Lite：default → Inductor 性能
 
@@ -592,12 +690,66 @@
 | 随机 32768/1024 | 3 | 0.959 | 0.969 | *0.925* | 是 | 32/32 : 32/32 |
 
 
+### Qwen3.5-35B-A3B-w8a8-mtp（MTP 关闭）：default → Inductor 性能
+
+- 捕获上限：1024（两条路径相同）；Inductor 缓存状态（逐轮）：cold、warm、warm；Inductor 证据：3/3 轮，每轮 82 个编译产物，均为 `VLLM_COMPILE`。
+- 设备：NPU 0、1，TP2；MTP 关闭。18 个“轮次×负载”均完成，且全部在性能阈值内。
+
+每格 default → Inductor 和加速比均取各轮中位数，方括号内是各轮的最小值和最大值。
+
+| 负载 | 轮数 | 吞吐 (tokens/s) | TPOT (ms) | TTFT (ms) | 吞吐加速比 | TPOT 加速比 | TTFT 加速比 | 阈值内 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ShareGPT QPS1 | 3 | 252.9 → 252.9 | 9.568 → 9.467 | 83.4 → 84.7 | 1.000 [1.000, 1.000] | 1.011 [1.005, 1.013] | 1.003 [0.971, 1.009] | 3/3 |
+| ShareGPT QPS4 | 3 | 964.3 → 965.3 | 16.493 → 16.148 | 109.4 → 109.0 | 1.001 [1.001, 1.001] | 1.021 [1.014, 1.033] | 1.004 [0.978, 1.024] | 3/3 |
+| ShareGPT QPS16 | 3 | 1440.7 → 1452.3 | 19.976 → 19.799 | 9250.8 → 9111.9 | 1.009 [0.983, 1.019] | 1.011 [0.984, 1.023] | 1.013 [0.975, 1.020] | 3/3 |
+| ShareGPT QPSinf | 3 | 1817.9 → 1824.8 | 15.567 → 15.560 | 11479.4 → 11425.1 | 1.004 [0.976, 1.020] | 1.001 [0.981, 1.012] | 1.005 [0.965, 1.023] | 3/3 |
+| 随机 8192/1024 | 3 | 648.2 → 648.2 | 11.417 → 11.387 | 952.7 → 978.9 | 1.000 [0.994, 1.001] | 0.998 [0.995, 1.003] | 0.973 [0.950, 1.058] | 3/3 |
+| 随机 32768/1024 | 3 | 386.1 → 383.7 | 17.423 → 17.470 | 3329.8 → 3441.6 | 0.994 [0.993, 0.994] | 0.996 [0.996, 1.001] | 0.977 [0.958, 0.979] | 3/3 |
+
+逐轮明细：
+
+| 负载 | 轮次 | 吞吐加速比 | TPOT 加速比 | TTFT 加速比 | 阈值内 | 完成请求 default/Inductor |
+|---|---:|---:|---:|---:|---|---:|
+| ShareGPT QPS1 | 1 | 1.000 | 1.013 | 1.009 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS1 | 2 | 1.000 | 1.005 | 0.971 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS1 | 3 | 1.000 | 1.011 | 1.003 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS4 | 1 | 1.001 | 1.033 | 1.004 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS4 | 2 | 1.001 | 1.014 | 0.978 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS4 | 3 | 1.001 | 1.021 | 1.024 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS16 | 1 | 1.019 | 1.023 | 1.013 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS16 | 2 | 0.983 | 0.984 | 0.975 | 是 | 200/200 : 200/200 |
+| ShareGPT QPS16 | 3 | 1.009 | 1.011 | 1.020 | 是 | 200/200 : 200/200 |
+| ShareGPT QPSinf | 1 | 1.020 | 1.012 | 1.023 | 是 | 200/200 : 200/200 |
+| ShareGPT QPSinf | 2 | 0.976 | 0.981 | 0.965 | 是 | 200/200 : 200/200 |
+| ShareGPT QPSinf | 3 | 1.004 | 1.001 | 1.005 | 是 | 200/200 : 200/200 |
+| 随机 8192/1024 | 1 | 1.000 | 0.995 | **1.058** | 是 | 32/32 : 32/32 |
+| 随机 8192/1024 | 2 | 0.994 | 0.998 | *0.950* | 是 | 32/32 : 32/32 |
+| 随机 8192/1024 | 3 | 1.001 | 1.003 | 0.973 | 是 | 32/32 : 32/32 |
+| 随机 32768/1024 | 1 | 0.994 | 0.996 | 0.979 | 是 | 32/32 : 32/32 |
+| 随机 32768/1024 | 2 | 0.994 | 1.001 | 0.958 | 是 | 32/32 : 32/32 |
+| 随机 32768/1024 | 3 | 0.993 | 0.996 | 0.977 | 是 | 32/32 : 32/32 |
+
+## Qwen3.5-35B-A3B-w8a8-mtp：历史固定负载复现（MTP 关闭）
+
+- 本次使用 NPU 2、3，不使用 0 卡；S2 default 与 S3fp Inductor 均为 TP2、`FULL_AND_PIECEWISE`、`custom_ops=['all']`、捕获档位 `[1,2,4,8,16,24,32]`。
+- 每条路径完成 5 种固定负载，每种 1 次预热 + 3 次正式重复；S2/S3fp 初始化分别为 222.2/260.1 秒。
+- **batch32 未复现历史 14%：历史 1.143，本次 0.999。prefill 也未复现 +7%：历史 1.068，本次 0.976。** 这次负载、图模式和捕获档位已与历史配置一致，剩余主要变量是 910B3→950DT 的硬件差异和代码演进，不能归因于在线服务协议或 MTP。
+
+| 负载 | 历史 S2 tokens/s | 历史 S3fp tokens/s | 历史加速比 | 本次 S2 tokens/s | 本次 S3fp tokens/s | 本次加速比 |
+|---|---:|---:|---:|---:|---:|---:|
+| decode 128/512/b1 | 62.4 | 62.4 | 1.000 | 129.0 | 129.3 | 1.002 |
+| 1024/256/b1 | 59.9 | 60.2 | 1.005 | 125.3 | 125.8 | 1.004 |
+| 1024/256/b8 | 357.8 | 378.8 | 1.059 | 739.1 | 732.7 | 0.991 |
+| 1024/256/b32 | 897.5 | 1026.2 | 1.143 | 1944.7 | 1942.9 | 0.999 |
+| prefill 4096/128/b8 | 218.7 | 233.5 | 1.068 | 506.2 | 493.8 | 0.976 |
+
 ## 未完成项与原因
 
 | 条目 | 当前状态 | 已确认原因与下一步 |
 |---|---|---|
 | DeepSeek-V4.1-Flash-1017 BF16 KV / FP8 KV | 待 8 卡全部空闲后补跑 | TP8 下先出现奇数 scale-group 打包错误；最小补丁越过后，又在 `npu_swiglu_group_quant` 遇到最后一维 576 不能被 128 整除。改用官方 DP8/TP1/EP8 后，首次因 Engram 主机内存注册失败停止；扩容共享内存后的重试遇到其他用户占用 NPU 0、1。不得抢占其他用户资源，因此推迟。 |
-| GLM-5.3-Flash-w8a8 性能 | 待 8 卡全部空闲后重试 | default 第 1 轮在权重加载后、服务就绪前退出，日志只有 `WorkerProc hit an exception`；当时的监控器提前终止进程，未留下完整异常栈。精度两条路径已完成，不影响其精度结果。 |
+| GLM-5.3-Flash-w8a8 性能与精度 | 待 8 卡全部空闲后重试 | default 性能第 1 轮在权重加载后、服务就绪前退出，日志只有 `WorkerProc hit an exception`；当时的监控器提前终止进程，未留下完整异常栈。固定输入任务虽然两条路径均返回 0，但标记为 Inductor 的运行实际为 `mode=NONE` 且无编译产物，不能作为有效 Inductor 精度结果，需与性能一起补跑。 |
+| Qwen3.5-35B-A3B-w8a8-mtp MTP 开启性能 | 用户要求暂停 | 已停止首轮 default 服务并清理本任务进程；部分结果不纳入性能结论。后续需要时使用非 0 卡重新运行完整三轮。 |
 | GLM-5.2-w4a8c8 | eager 启动失败，未运行 Inductor 和性能 | profiling 阶段调用 `aclnnGroupedMatmulSwigluQuantWeightNzV2`，CANN 报 `Invalid_Argument(EZ0024)`：`weightAssistMatrix` 应为 `nullptr`，实际非空。 |
 
 ## DeepSeek-V4.1 临时修改与还原
@@ -605,11 +757,12 @@
 - TP8 调查确认两处 scale 形状分别为 `[5120,9]` 和 `[384,5120,9]`，原代码按偶数列直接两两打包。临时补丁在两处补一个存储占位槽；奇偶列的 CPU 形状与字节映射检查均通过，但不能据此宣称模型已经跑通。
 - 临时修改只涉及 `w8a8_mxfp8.py` 与 `w4a8_mxfp4.py`。切换到官方 DP8/TP1/EP8 后，两文件均已恢复，SHA-256 分别为 `f9d03f16ae93fb678da5ff0135848226b585960dc1abe45252719ce7eb29e65a`、`3d23f23d108ac0718ad85fe0c25b2fc9ebc7699cd640bc74e9967819192bc19b`，与修改前一致。后续 14 个 TP1 测试没有使用这些临时补丁。
 - 为支持 DP 在线固定输入精度，benchmark 增加了 DP 参数透传、OpenAI completions token/logprob 采集和现有比较规则复用；模拟 HTTP 的两轮 8 提示词测试通过。这些改动属于测试脚本，不改变 vLLM 模型实现。
-- Engram 共享内存从 16 GiB 临时调整为 128 GiB 用于诊断，暂停 DeepSeek 时已恢复为 16 GiB。原始文件、补丁和配置副本保存在 `server-scripts/benchmark-diagnosis/20261125_deepseek_v41_minfix/`。
+- Engram 共享内存从 16 GiB 临时调整为 128 GiB 用于诊断，暂停 DeepSeek 时已恢复为 16 GiB。官方 950DT DP8/TP1/EP8 部署示例要求 `--shm-size=512g`；服务器约有 2.1 TiB 可用主机内存，因此下次补跑应按 512 GiB 配置，不能把 128 GiB 诊断尝试视为满足官方部署要求。原始文件、补丁和配置副本保存在 `server-scripts/benchmark-diagnosis/20261125_deepseek_v41_minfix/`。
 
 ## 完整性检查
 
-- 已对 14 个 TP1 条目逐一断言：18 份 compare JSON、3 份 Inductor evidence、两条路径各轮捕获上限 1024，且 evidence 均确认 Inductor 路径有效。
+- 已对 14 个 TP1 条目逐一断言：18 份 compare JSON、3 份 Inductor evidence、两条路径各轮捕获上限 1024。另对全部 42 份正式性能 evidence 逐份检查了实际 backend、`VLLM_COMPILE`、非空编译产物、Inductor 日志及图捕获/回放记录，均通过；独立 Qwen3-0.6B 冒烟也满足这些条件。
+- Qwen3.5-35B-A3B-w8a8-mtp MTP 关闭性能已核验：18 份 compare、36 份原始负载结果、3 份 evidence，所有请求完整，捕获上限均为 1024。历史复现两条路径各含 5 种负载、3 次正式重复，设备字段均为 2,3。
 - 性能脚本在请求失败或数量不足时返回非零；所有进入本报告的 14 个条目返回码均为 0。W8A8 重试另外逐轮检查了 `failed == 0` 且 `completed == num_prompts`。
 - 每份报告的中位数和最小/最大值来自 3 轮结果，不能把单轮波动解释为稳定收益。多模态模型只使用文本负载。
-- 本任务启动的正式批次与重试批次均已正常结束；定时监控仅用于后续 8 卡补跑，最终交付前还需清理并再次检查 NPU。
+- DeepSeek 8 卡监控已按用户要求取消，MTP 开启任务已停止并清理。Qwen3.5 历史复现结束后，NPU 2、3 无本任务进程；当前其他卡上的外部进程不属于本报告测试。
