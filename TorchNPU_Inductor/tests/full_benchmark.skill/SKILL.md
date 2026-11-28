@@ -36,9 +36,8 @@ benchmark 本体脚本以 `doc/InfraDocs/TorchNPU_Inductor/tests/benchmark/` 为
 
 **运行方式**
 
-- 调度器由一个可跟踪的后台任务直接执行（`run_tracked.sh`），不用脱离会话的进程，也不另设定时监控；日志同时写 `master.log`，任务输出里每 5 分钟有一段进度（已完成任务、在跑任务与卡、各任务日志的最新几行）。结束后任务以调度器的返回码结束并给出通知。
-- 中途要看进度：直接读后台任务的输出；需要细节再 `status.sh` 或看 `logs/perf_<名字>.log`。
-- `rc≠0` 或疑似卡死时看日志尾向用户说明，不自行 kill；要停就 `stop.sh`（按进程树直接 SIGKILL，几秒完成）。
+- 调度器由一个可跟踪的后台任务直接执行：`bash ./run_all.sh 2>&1 | tee -a "$BATCH/logs/master.log"`（先 `mkdir -p "$BATCH/logs"`）。每个任务的输出经 `tee` 同时写 `logs/perf_<名字>.log` 和调度器的标准输出（带任务名前缀），所以任务输出里实时能看到全部日志，`master.log` 是完整副本。不用脱离会话的进程，不另设监控或定时任务。
+- `rc≠0` 或疑似卡死时看任务输出或 `status.sh`，向用户说明，不自行 kill；要停就 `stop.sh`（按进程树直接 SIGKILL，几秒完成）。
 - 结束时确认 8 卡 HBM 回基线、无残留进程、`/dev/shm` 恢复 16G。
 
 **失败处理**
@@ -59,8 +58,7 @@ benchmark 本体脚本以 `doc/InfraDocs/TorchNPU_Inductor/tests/benchmark/` 为
 |---|---|---|
 | `scripts/jobs.txt` | 任务清单，每行 `名字\|权重路径\|tp\|额外参数` | 跑哪些模型在这里改；`#` 开头的行忽略 |
 | `scripts/common.sh` | 路径和开关 | 全部可用环境变量覆盖：`V`、`BATCH`、`SCRIPTS`（服务器上 benchmark 副本目录，默认 `scripts/benchmark_20261128_v9`）、`ROUNDS`（2）、`MAX_CARDS`（4）、`CAPTURE`（1024）、`DEEPSEEK`（1） |
-| `scripts/run_all.sh` | 主调度器：读 jobs.txt、动态选卡、卡锁、预算，结束后调 `deepseek.sh` | `BATCH=... MAX_CARDS=8 ROUNDS=2 bash ./run_all.sh`；通常经 `run_tracked.sh` 启动 |
-| `scripts/run_tracked.sh` | 在当前会话里前台运行 `run_all.sh`，每 `PROGRESS` 秒（默认 300）打印一段进度，调度器退出时以它的返回码结束 | 后台任务的命令 |
+| `scripts/run_all.sh` | 主调度器：读 jobs.txt、动态选卡、卡锁、预算，结束后调 `deepseek.sh`；任务输出经 `tee` 写各自日志并带前缀转到标准输出 | `BATCH=... MAX_CARDS=8 ROUNDS=2 bash ./run_all.sh 2>&1 \| tee -a "$BATCH/logs/master.log"` |
 | `scripts/deepseek.sh` | DeepSeek 阶段：8 卡空闲检查、`/dev/shm` 临时扩到 512G 并恢复、三组参数阶梯、1 轮 | 模型路径和尝试参数按需改 |
 | `scripts/status.sh` | 进度：已完成任务、卡锁、主日志尾、最近 30 分钟新文件数、每卡 HBM | — |
 | `scripts/stop.sh` | 停批次：按脚本名匹配 `run_all.sh`/`run_performance.sh`/`deepseek.sh`（不看路径、不匹配自身），SIGKILL 整棵进程树，清卡锁，恢复 `/dev/shm`，几秒完成 | 会停容器里所有这样的批次 |
@@ -74,10 +72,10 @@ benchmark 本体脚本以 `doc/InfraDocs/TorchNPU_Inductor/tests/benchmark/` 为
 2. 本地改 `tests/benchmark/`（如有）并提交 InfraDocs，`scp` 到服务器新目录，逐文件比 md5（Windows 的 `md5sum` 输出带 `*`，比对时去掉）。
 3. 核对 torch_npu 版本（见固定规则），需要就重建，之后 `diff` 为 0、`te_smoke.py` 通过再继续。
 4. 改 `jobs.txt`，`scp` 本目录 `scripts/` 到服务器 `scripts/<主题>/`，比 md5，空跑验证。
-5. 启动：把 `BATCH`、`ROUNDS`、`MAX_CARDS`、`CAPTURE`、`DEEPSEEK`、`SCRIPTS` 作为环境变量，用一个可跟踪的后台任务执行 `bash ./run_tracked.sh`（调度器是该任务的前台子进程；`PROGRESS` 控制进度输出间隔，默认 300 秒）。
+5. 启动：把 `BATCH`、`ROUNDS`、`MAX_CARDS`、`CAPTURE`、`DEEPSEEK`、`SCRIPTS` 作为环境变量，用一个可跟踪的后台任务执行 `mkdir -p "$BATCH/logs" && bash ./run_all.sh 2>&1 | tee -a "$BATCH/logs/master.log"`。
 6. 启动后 1–2 分钟核对 `JOB_LAUNCH` 的卡号、运行中服务的缓存环境变量、`environment.json` 里的 torch-npu 版本。
-7. 监控（见固定规则）；有截止时间就设会话内一次性停止任务。
-8. `MASTER_END` 后：`summarize.py` → `make_report_tables.py` → 写报告；`tar --exclude='*/cache'` 拉回本地；清理定时任务和后台任务；确认服务器现场干净。
+7. 进度看后台任务的输出；有截止时间就在会话内设一次性停止任务，到点执行 `stop.sh`。
+8. 任务结束（`SCHEDULER_EXITED`）后：`summarize.py` → `make_report_tables.py` → 写报告；`tar --exclude='*/cache'` 拉回本地；确认服务器现场干净。
 9. 收尾核对：条目 × 轮数 × 6 负载的 compare 齐全、捕获上限正确、Inductor 证据（backend=inductor、`mode=VLLM_COMPILE`、编译产物非零）、请求 `completed == num_prompts`、总览表标记存在。
 
 ## 已知情况

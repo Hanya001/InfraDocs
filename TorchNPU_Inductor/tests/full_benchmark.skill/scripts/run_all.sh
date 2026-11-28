@@ -55,11 +55,14 @@ run_job() {
     sleep "$DRY_RUN"
     rc=0
   else
+    # Job output goes to its own log file and, with the job name as prefix, to this script's
+    # stdout, so a caller that runs "bash ./run_all.sh 2>&1 | tee -a master.log" sees every job
+    # log live. PIPESTATUS[0] keeps run_performance.sh's exit code.
     bash "$SCRIPTS/run_performance.sh" --model "$model" --workspace "$WS" \
       --results "$BATCH/$name/perf" --sharegpt "$SHAREGPT" --devices "$cards" --tp "$tp" \
       --capture-size "$CAPTURE" --repeats "$ROUNDS" "${extra_args[@]}" \
-      > "$BATCH/logs/perf_$name.log" 2>&1
-    rc=$?
+      2>&1 | sed -u "s|^|[$name] |" | tee -a "$BATCH/logs/perf_$name.log"
+    rc=${PIPESTATUS[0]}
   fi
   echo "$rc" > "$BATCH/status/perf_$name.status"
   log "JOB_END name=$name rc=$rc"
