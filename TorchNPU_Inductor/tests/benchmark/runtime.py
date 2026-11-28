@@ -298,6 +298,13 @@ def parse_devices(value, parser):
 
 
 def busy_devices(output, devices, max_used_mb):
+    """Cards that have a process or more than max_used_mb of HBM in use.
+
+    npu-smi prints the per-card data row in two layouts depending on the terminal: with pipes
+    between the util / memory / HBM columns, or with those three columns merged into one field.
+    The HBM is taken as the last "used / total" pair of that row in either layout; a
+    process-table row (card id and pid in the first two columns) marks the card busy.
+    """
     busy = set()
     selected = {str(device) for device in devices}
     current_card = None
@@ -310,11 +317,11 @@ def busy_devices(output, devices, max_used_mb):
             current_card = first[0]
         if current_card not in selected:
             continue
-        if len(fields) >= 5 and fields[2].isdigit() and fields[3].isdigit():
+        if len(fields) >= 3 and fields[1].isdigit() and fields[2].isdigit():
             busy.add(int(current_card))
-        for field in fields:
-            match = re.fullmatch(r"(\d+)\s*/\s*\d+(?:\s*MB)?", field)
-            if match and int(match.group(1)) > max_used_mb:
+        if len(fields) >= 5 and fields[3] == "NA":
+            pairs = re.findall(r"(\d+)\s*/\s*(\d+)", " ".join(fields[4:]))
+            if pairs and int(pairs[-1][0]) > max_used_mb:
                 busy.add(int(current_card))
     return sorted(busy)
 
