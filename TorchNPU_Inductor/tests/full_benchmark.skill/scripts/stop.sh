@@ -1,60 +1,30 @@
 #!/usr/bin/env bash
-# Stop the batch started by run_all.sh: terminate the launcher's whole process tree, then verify.
+# Stop the batch started by run_all.sh: SIGKILL the scheduler's whole process tree, then verify.
+# Processes are matched by script name (run_all.sh / run_performance.sh / deepseek.sh) whatever
+# their path; the bracketed patterns never match this script's own shell. Test servers are killed
+# outright: an aborted measurement needs no graceful shutdown, and waiting only slows this down.
+# This stops every run_all.sh / run_performance.sh in the container, not just one batch.
 ORCH=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source "$ORCH/common.sh" 2>/dev/null
-PATTERN="$(basename "$ORCH")/(run_all|deepseek).sh"
-
 descendants() {
   local child
-  for child in $(ps -o pid= --ppid "$1" 2>/dev/null); do
-    echo "$child"
-    descendants "$child"
-  done
+  for child in $(ps -o pid= --ppid "$1" 2>/dev/null); do echo "$child"; descendants "$child"; done
 }
-
-alive() {
-  local state
-  state=$(ps -o stat= -p "$1" 2>/dev/null) || return 1
-  [[ -n $state && $state != Z* ]]
-}
-
-masters=$(pgrep -f "$PATTERN" | grep -v -x -e "$$" -e "$PPID" || true)
-if [[ -z $masters ]]; then
+roots=$(ps -eo pid=,args= | grep -E "[r]un_all\.sh|[r]un_performance\.sh|[d]eepseek\.sh" | awk '{print $1}')
+if [[ -z $roots ]]; then
   echo "NO_RUNNING_BATCH"
 else
-  list=$(for m in $masters; do echo "$m"; descendants "$m"; done | sort -un | tr '\n' ' ')
-  echo "STOPPING $(echo $list | wc -w) processes (masters: $(echo $masters | tr '\n' ' '))"
-  ps -o pid=,etime=,args= -p "$(echo $list | tr ' ' ',')" 2>/dev/null | cut -c1-170
-  kill -TERM $list 2>/dev/null
-  left=$list
-  for _ in $(seq 1 30); do
-    sleep 2
-    left=""
-    for p in $list; do alive "$p" && left+=" $p"; done
-    [[ -z $left ]] && break
-  done
-  if [[ -n $left ]]; then
-    echo "SIGKILL after 60s: $left"
-    kill -KILL $left 2>/dev/null
-    sleep 5
-  fi
-  left=""
-  for p in $list; do alive "$p" && left+=" $p"; done
+  list=$(for p in $roots; do echo "$p"; descendants "$p"; done | sort -un | tr '\n' ' ')
+  echo "KILLING $(echo $list | wc -w) processes (roots: $(echo $roots | tr '\n' ' '))"
+  kill -KILL $list 2>/dev/null
+  sleep 3
+  left=$(ps -eo pid=,args= | grep -E "[r]un_performance\.sh|[v]llm\.entrypoints|[E]ngineCore|[s]erver\.py run|[r]untime\.py exec|[v]llm bench serve" | awk '{print $1}' | tr '\n' ' ')
   echo "LEFT: ${left:-none}"
 fi
 rm -rf "$BATCH"/cardlocks/*
-busy=0
-for _ in $(seq 1 15); do
-  busy=$(npu-smi info | grep -oE '[0-9]+ +/ +98304' | awk -F'/' '{gsub(/ /,"",$1); if ($1+0 > 8192) n++} END {print n+0}')
-  [[ $busy -eq 0 ]] && break
-  sleep 4
-done
 echo "NPU_HBM_USED_MB: $(npu-smi info | grep -oE '[0-9]+ +/ +98304' | awk -F'/' '{gsub(/ /,"",$1); printf "%s ", $1}')"
-echo "CARDS_OVER_8192MB: $busy"
-echo "REMAINING_TEST_PROCESSES:"
 # The DeepSeek stage enlarges /dev/shm; restore the 16G container default if it was left enlarged.
 shm_bytes=$(df -B1 --output=size /dev/shm | tail -1 | tr -d " ")
 if (( shm_bytes > 34359738368 )); then
-  mount -o remount,size=16G /dev/shm && echo "SHM_RESTORED_16G ($(df -h /dev/shm | tail -1 | awk '{print $2}'))" || echo "SHM_RESTORE_FAILED"
+  mount -o remount,size=16G /dev/shm && echo "SHM_RESTORED_16G" || echo "SHM_RESTORE_FAILED"
 fi
-ps -eo pid,etime,stat,args | grep -E "run_performance|vllm.entrypoints|EngineCore|server.py|runtime.py" | grep -v -E "grep|defunct|stop.sh" | cut -c1-170
