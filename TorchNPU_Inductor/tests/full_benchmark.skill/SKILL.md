@@ -93,5 +93,6 @@ benchmark 本体脚本以 `doc/InfraDocs/TorchNPU_Inductor/tests/benchmark/` 为
 - 容器时钟是 UTC、没有 zoneinfo，日志比北京时间慢 8 小时。
 - 工具写文件落盘有延迟：同步前确认本地 md5 变了再 `scp`，同步后比两端 md5；heredoc 里的反斜杠序列会被改写，脚本内容尽量不含反斜杠。
 - Windows 的 `tar` 把 `D:` 当远程主机，用 `/d/...` 路径并加 `--force-local`。
+- 仓库开了 `core.autocrlf`，切分支后工作区里的脚本会变成 CRLF，传到服务器就是 `set: pipefail: invalid option name`、`common.sh: No such file` 这类报错。目录里的 `.gitattributes` 已把 `.sh/.py/.txt/.md` 固定为 LF；同步前用 Python 按二进制检查没有 `\r`（Git Bash 的 grep/sed 对 CR 不可靠），再 scp。
 - `pgrep -f` 会匹配到外层 `bash -c` 包装进程，统计时按脚本名精确匹配。
 - 工作区 `env.sh` 无条件 export 三个缓存变量，`runtime.py` 已兜底；最好把 `env.sh` 第 113–115 行改成 `${VAR:-}` 形式。
