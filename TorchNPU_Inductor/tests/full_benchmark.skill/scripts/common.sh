@@ -11,7 +11,9 @@ SHAREGPT=$V/datasets/ShareGPT_V3_unfiltered_cleaned_split.json
 CAPTURE=${CAPTURE:-1024}
 ROUNDS=${ROUNDS:-2}
 MAX_CARDS=${MAX_CARDS:-4}
-CARD_ORDER="7 6 5 4 3 2 1 0"
+# Cards the scheduler may pick, in preference order; override to keep a batch away from cards
+# another user (or another session) is using, e.g. CARD_ORDER="3 2".
+CARD_ORDER=${CARD_ORDER:-"7 6 5 4 3 2 1 0"}
 [[ -f /usr/share/zoneinfo/Asia/Shanghai ]] && export TZ=Asia/Shanghai
 source "$WS/env.sh"
 export VLLM_WORKER_MULTIPROC_METHOD=spawn PYTHONUNBUFFERED=1
