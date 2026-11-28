@@ -75,7 +75,7 @@ benchmark 本体脚本以 `doc/InfraDocs/TorchNPU_Inductor/tests/benchmark/` 为
 5. 启动：把 `BATCH`、`ROUNDS`、`MAX_CARDS`、`CAPTURE`、`DEEPSEEK`、`SCRIPTS` 作为环境变量，用一个可跟踪的后台任务执行 `mkdir -p "$BATCH/logs" && bash ./run_all.sh 2>&1 | tee -a "$BATCH/logs/master.log"`。
 6. 启动后 1–2 分钟核对 `JOB_LAUNCH` 的卡号、运行中服务的缓存环境变量、`environment.json` 里的 torch-npu 版本。
 7. 进度看后台任务的输出；有截止时间就在会话内设一次性停止任务，到点执行 `stop.sh`。
-8. 任务结束（`SCHEDULER_EXITED`）后：`summarize.py` → `make_report_tables.py` → 写报告；`tar --exclude='*/cache'` 拉回本地；确认服务器现场干净。
+8. 任务结束（输出末尾是 `MASTER_END`）后：`summarize.py` → `make_report_tables.py` → 写报告；`tar --exclude='*/cache'` 拉回本地；确认服务器现场干净。
 9. 收尾核对：条目 × 轮数 × 6 负载的 compare 齐全、捕获上限正确、Inductor 证据（backend=inductor、`mode=VLLM_COMPILE`、编译产物非零）、请求 `completed == num_prompts`、总览表标记存在。
 
 ## 已知情况

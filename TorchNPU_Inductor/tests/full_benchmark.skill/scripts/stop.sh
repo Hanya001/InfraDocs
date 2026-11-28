@@ -10,7 +10,20 @@ descendants() {
   local child
   for child in $(ps -o pid= --ppid "$1" 2>/dev/null); do echo "$child"; descendants "$child"; done
 }
-roots=$(ps -eo pid=,args= | grep -E "[r]un_all\.sh|[r]un_performance\.sh|[d]eepseek\.sh" | awk '{print $1}')
+# The caller's own shell often mentions these script names in its command line (for example
+# "md5sum .../run_all.sh; bash ./stop.sh"), so never treat an ancestor of this script as a root.
+ancestors=" $$ "
+p=$$
+while (( p > 1 )); do
+  p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+  [[ -n $p ]] || break
+  ancestors="$ancestors$p "
+done
+roots=""
+for pid in $(ps -eo pid=,args= | grep -E "[r]un_all\.sh|[r]un_performance\.sh|[d]eepseek\.sh" | awk '{print $1}'); do
+  [[ $ancestors == *" $pid "* ]] || roots="$roots $pid"
+done
+roots=${roots# }
 if [[ -z $roots ]]; then
   echo "NO_RUNNING_BATCH"
 else
