@@ -30,6 +30,9 @@ Options:
   --qps LIST      Comma-separated ShareGPT request rates (default: 1,4,16,inf).
                    Use 'none' to skip ShareGPT loads.
   --skip-long     Skip the random 8192/32768 long-context loads.
+  --load-retries N  Extra attempts for a load whose requests fail or come back incomplete
+                   (default: 2, 0 disables). The load is re-run on the same server; each
+                   failed result is kept as <name>.failed_attempt<k>.json.
   --timeout SEC   Timeout for each server process, including its startup wait (default: 21600)
   -h, --help      Show this help
 EOF
@@ -53,6 +56,7 @@ CAPTURE_SIZE=
 CAPTURE_ARGS=()
 QPS_LIST="1 4 16 inf"
 SKIP_LONG=0
+LOAD_RETRIES=2
 while [[ $# -gt 0 ]]; do
   case $1 in
     --model) MODEL=$2; shift 2 ;;
@@ -80,6 +84,7 @@ while [[ $# -gt 0 ]]; do
     --capture-size) CAPTURE_SIZE=$2; shift 2 ;;
     --qps) QPS_LIST=${2//,/ }; shift 2 ;;
     --skip-long) SKIP_LONG=1; shift ;;
+    --load-retries) LOAD_RETRIES=$2; shift 2 ;;
     --timeout) TIMEOUT=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -106,6 +111,7 @@ if [[ -n $CAPTURE_SIZE ]]; then
   [[ $CAPTURE_SIZE == 32 || " $LADDER " == *" $CAPTURE_SIZE "* ]] || { echo '--capture-size must be 32 or a power of two >= 64' >&2; exit 2; }
   CAPTURE_ARGS=(--max-cudagraph-capture-size "$CAPTURE_SIZE" --cudagraph-capture-sizes $LADDER)
 fi
+[[ $LOAD_RETRIES =~ ^[0-9]+$ ]] || { echo 'Invalid load retries' >&2; exit 2; }
 IFS=',' read -r -a CARDS <<< "$DEVICES"
 [[ ${#CARDS[@]} -eq $((TP * DP)) ]] || { echo 'The number of devices must equal TP * DP' >&2; exit 2; }
 
@@ -169,17 +175,42 @@ start_server() {
   "$PYTHON" "$SCRIPTS/server.py" wait --base-url "$BASE_URL" --server-pid "$SERVER_PID" --timeout "$TIMEOUT"
 }
 
+# Run one load; a load whose requests fail or come back incomplete is re-run on the
+# same server up to LOAD_RETRIES more times. Failed results are kept beside the final
+# one as <name>.failed_attempt<k>.json. Returns non-zero only when every attempt fails.
+run_load() {
+  local out=$1 attempt rc
+  shift
+  for ((attempt = 0; attempt <= LOAD_RETRIES; attempt++)); do
+    if [[ -e $out ]]; then
+      mv "$out" "${out%.json}.failed_attempt${attempt}.json"
+    fi
+    rc=0
+    "$PYTHON" "$SCRIPTS/performance.py" run --model "$MODEL" --base-url "$BASE_URL" --out "$out" "$@" || rc=$?
+    if [[ $rc == 0 ]]; then
+      (( attempt > 0 )) && echo "LOAD_RETRIED out=$out attempts=$((attempt + 1))"
+      return 0
+    fi
+    if (( attempt < LOAD_RETRIES )); then
+      echo "LOAD_RETRY out=$out rc=$rc next_attempt=$((attempt + 2))" >&2
+      sleep 5
+    fi
+  done
+  echo "LOAD_FAILED out=$out attempts=$((LOAD_RETRIES + 1)) rc=$rc" >&2
+  return 1
+}
+
 run_loads() {
   local track=$1 round=$2 qps input_len
   [[ $QPS_LIST == none ]] || for qps in $QPS_LIST; do
-    "$PYTHON" "$SCRIPTS/performance.py" run --model "$MODEL" --base-url "$BASE_URL" \
-      --dataset-name sharegpt --dataset-path "$SHAREGPT" --request-rate "$qps" \
-      --out "$ROOT/performance/$track/sharegpt_qps_${qps}_repeat${round}.json"
+    run_load "$ROOT/performance/$track/sharegpt_qps_${qps}_repeat${round}.json" \
+      --dataset-name sharegpt --dataset-path "$SHAREGPT" \
+      --request-rate "$qps"
   done
   [[ $SKIP_LONG == 1 ]] || for input_len in 8192 32768; do
-    "$PYTHON" "$SCRIPTS/performance.py" run --model "$MODEL" --base-url "$BASE_URL" \
-      --dataset-name random --random-input-len "$input_len" --request-rate inf \
-      --out "$ROOT/performance/$track/random_${input_len}_1024_repeat${round}.json"
+    run_load "$ROOT/performance/$track/random_${input_len}_1024_repeat${round}.json" \
+      --dataset-name random --random-input-len "$input_len" \
+      --request-rate inf
   done
 }
 

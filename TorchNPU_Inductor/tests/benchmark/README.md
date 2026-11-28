@@ -120,6 +120,7 @@ Embedding 正确性使用 `run_correctness.sh --embedding`，仅支持 DP=1；DP
 - `--capture-size N`：性能脚本专用。同时给 default 和 Inductor 设置图捕获上限，并展开为尺寸阶梯 `[1,2,4,8,16,24,32]` 加不超过 N 的 2 的幂（N 为 32 或 ≥64 的 2 的幂）。省略时两条路径都保持 vLLM 默认值（32）。比较 Inductor 的净收益时应固定该值，否则捕获窗口不同会混淆结论。
 - `--qps LIST`：性能脚本专用，逗号分隔的 ShareGPT 到达率，默认 `1,4,16,inf`；填 `none` 跳过 ShareGPT。
 - `--skip-long`：性能脚本专用，跳过 random 8192/32768 长上下文负载。
+- `--load-retries N`：性能脚本专用。某个负载的请求失败或数量不完整时，在同一服务上重跑该负载，最多再试 N 次（默认 2，0 为不重试）。每次失败的结果保留为 `<名字>.failed_attempt<k>.json`，重试成功后任务继续；全部尝试都失败才返回非零。
 - `--timeout`：进程超时秒数。
 
 ## 3. 看结果和退出码
@@ -133,7 +134,7 @@ Embedding 正确性使用 `run_correctness.sh --embedding`，仅支持 DP=1；DP
 - 报告中加速比 >1.05 使用粗体，<0.95 使用斜体；等于边界时不标记。
 - `inductor_evidence.json` 和 `server.json` 用于确认实际 backend、图模式和生成产物。
 
-**数值不一致默认只写报告，脚本仍正常退出。** 参数、服务、请求或结果文件错误才返回非零。
+**数值不一致默认只写报告，脚本仍正常退出。** 参数、服务、请求或结果文件错误才返回非零。性能脚本里单个负载的请求失败或数量不完整先按 `--load-retries` 在同一服务上重跑，不再直接中止整个模型；全部尝试失败才返回非零。
 
 逐样本统计取决于 AISBench 输出：没有逐题 `details` 时，`sample_comparison.available=false`，需要另外分析 `predictions/`。
 
