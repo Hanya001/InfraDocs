@@ -36,8 +36,9 @@ benchmark 本体脚本以 `doc/InfraDocs/TorchNPU_Inductor/tests/benchmark/` 为
 
 **运行方式**
 
-- 调度器由一个可跟踪的后台任务直接执行：`bash ./run_all.sh 2>&1 | tee -a "$BATCH/logs/master.log"`（先 `mkdir -p "$BATCH/logs"`）。每个任务的输出经 `tee` 同时写 `logs/perf_<名字>.log` 和调度器的标准输出（带任务名前缀），所以任务输出里实时能看到全部日志，`master.log` 是完整副本。不用脱离会话的进程，不另设监控或定时任务。
-- `rc≠0` 或疑似卡死时看任务输出或 `status.sh`，向用户说明，不自行 kill；要停就 `stop.sh`（按进程树直接 SIGKILL，几秒完成）。
+- 调度器由一个可跟踪的后台任务直接执行：`bash ./run_all.sh 2>&1 | tee -a "$BATCH/logs/master.log"`（先 `mkdir -p "$BATCH/logs"`）。每个任务的输出经 `tee` 同时写 `logs/perf_<名字>.log` 和调度器的标准输出（带任务名前缀），所以任务输出里实时能看到全部日志，`master.log` 是完整副本。不用脱离会话的进程。
+- 每 10 分钟一次监控回调（会话内定时任务，`3-59/10 * * * *` 避开整点）：`status.sh` 看已完成任务与 rc、在跑任务与卡、最近 30 分钟新文件数、每卡 HBM，再看后台任务的最新输出。正常时一两句话汇报；`rc≠0` 看该任务日志尾部说明，在跑但 30 分钟没有新文件视为疑似卡死，长时间等不到空卡要说明卡被谁占着；只说明，不自行 kill 或重跑。结束后汇总、拉回结果、出报告，删定时任务。
+- 要停就 `stop.sh`（按进程树直接 SIGKILL，几秒完成）。
 - 结束时确认 8 卡 HBM 回基线、无残留进程、`/dev/shm` 恢复 16G。
 
 **失败处理**
@@ -74,8 +75,8 @@ benchmark 本体脚本以 `doc/InfraDocs/TorchNPU_Inductor/tests/benchmark/` 为
 4. 改 `jobs.txt`，`scp` 本目录 `scripts/` 到服务器 `scripts/<主题>/`，比 md5，空跑验证。
 5. 启动：把 `BATCH`、`ROUNDS`、`MAX_CARDS`、`CAPTURE`、`DEEPSEEK`、`SCRIPTS` 作为环境变量，用一个可跟踪的后台任务执行 `mkdir -p "$BATCH/logs" && bash ./run_all.sh 2>&1 | tee -a "$BATCH/logs/master.log"`。
 6. 启动后 1–2 分钟核对 `JOB_LAUNCH` 的卡号、运行中服务的缓存环境变量、`environment.json` 里的 torch-npu 版本。
-7. 进度看后台任务的输出；有截止时间就在会话内设一次性停止任务，到点执行 `stop.sh`。
-8. 任务结束（输出末尾是 `MASTER_END`）后：`summarize.py` → `make_report_tables.py` → 写报告；`tar --exclude='*/cache'` 拉回本地；确认服务器现场干净。
+7. 开每 10 分钟一次的监控回调（见固定规则）；有截止时间就在会话内设一次性停止任务，到点执行 `stop.sh`。
+8. 任务结束（输出末尾是 `MASTER_END`）后：`summarize.py` → `make_report_tables.py` → 写报告；`tar --exclude='*/cache'` 拉回本地；删监控定时任务；确认服务器现场干净。
 9. 收尾核对：条目 × 轮数 × 6 负载的 compare 齐全、捕获上限正确、Inductor 证据（backend=inductor、`mode=VLLM_COMPILE`、编译产物非零）、请求 `completed == num_prompts`、总览表标记存在。
 
 ## 已知情况
